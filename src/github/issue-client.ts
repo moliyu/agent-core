@@ -45,8 +45,13 @@ export class GitHubIssueClient {
    */
   private static async execGh(args: string[]): Promise<string> {
     try {
+      const env = { ...process.env };
+      if (!env.GH_TOKEN && env.GITHUB_TOKEN) {
+        env.GH_TOKEN = env.GITHUB_TOKEN;
+      }
       const { stdout } = await execFileAsync("gh", args, {
         maxBuffer: 10 * 1024 * 1024,
+        env,
       });
       return stdout.trim();
     } catch (error: any) {
