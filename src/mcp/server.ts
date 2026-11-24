@@ -12,6 +12,7 @@ import { OasisEditorBridge } from "../bridge/oasis-editor-bridge.js";
 import { PageBridge } from "../bridge/page-bridge.js";
 import { openBlankCanvas } from "../bridge/ide-actions.js";
 import { allOasisTools } from "../tools/oasis-editor-tools.js";
+import { allGitHubTools } from "../tools/github-issue-tools.js";
 import { WorkspaceContext } from "../workspace/context.js";
 import { ChromeLauncher } from "../cdp/chrome-launcher.js";
 import { runInit } from "../cli/init.js";
@@ -121,10 +122,12 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
     }
   }
 
+  const allTools = [...allOasisTools, ...allGitHubTools];
+
   // 1. 注册工具列表
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-      tools: allOasisTools.map((t) => {
+      tools: allTools.map((t) => {
         const jsonSchema = zodToJsonSchema(t.parameters, { target: "openApi3" }) as any;
         return {
           name: t.name,
@@ -142,7 +145,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
   // 2. 注册工具执行
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-    const tool = allOasisTools.find((t) => t.name === name);
+    const tool = allTools.find((t) => t.name === name);
     if (!tool) {
       return {
         isError: true,
@@ -151,6 +154,20 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
     }
 
     try {
+      // 2.1 针对无需编辑器的工具（如 GitHub Issues 系列），无需拉起 Chrome 或连接 CDP
+      if (tool.requiresEditor === false) {
+        const validatedArgs = tool.parameters.parse(args ?? {});
+        const result = await tool.execute(null as any, validatedArgs, { workspace });
+        return {
+          content: [
+            {
+              type: "text",
+              text: typeof result === "string" ? result : JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
       if (name === "open_blank_canvas") {
         const pageBridge = await getOrInitPageBridge();
         const res = await openBlankCanvas(pageBridge, {

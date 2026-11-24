@@ -116,4 +116,5 @@ export class OasisAgentCore {
 export * from "./cdp/index.js";
 export * from "./bridge/index.js";
 export * from "./tools/index.js";
+export * from "./github/index.js";
 export * from "./mcp/server.js";

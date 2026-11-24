@@ -1,5 +1,5 @@
 {
-  "name": "agent-core",
+  "name": "@moliyu/agent-core",
   "version": "0.1.0",
   "description": "Universal Agent bridge for browser page control via Chrome DevTools Protocol (CDP)",
   "type": "module",
@@ -8,6 +8,14 @@
   "bin": {
     "agent-core": "./dist/bin.js",
     "agent-core-mcp": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",

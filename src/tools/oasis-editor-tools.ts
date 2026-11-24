@@ -13,6 +13,7 @@ export interface ToolExecutionContext {
 export interface AgentToolDefinition {
   name: string;
   description: string;
+  requiresEditor?: boolean;
   parameters: z.ZodTypeAny;
   execute: (
     editor: OasisEditorBridge,

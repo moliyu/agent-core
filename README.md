@@ -1,4 +1,4 @@
-# Oasis Agent Core (`agent-core`)
+# Oasis Agent Core (`@moliyu/agent-core`)
 
 通用 Oasis 低代码可视化画布 Agent 控制桥接库与 MCP 服务。
 基于 Chrome DevTools Protocol (CDP)，解耦 AI Agent 宿主与低代码页面交互逻辑，支持任意 Agent（Codex、Cursor、Claude Desktop、Windsurf、Pi 等）直接读取、操作与编排 Oasis 低代码可视化页面。
@@ -17,6 +17,9 @@
 - **IDE 自动化穿透 (Tool & Skill)**：
   - 内置 `open_blank_canvas` 工具与 `oasis-blank-canvas` Agent Skill；
   - 自动穿透【顶部菜单“工程” -> “开始工作” -> 确认丢弃旧空间 -> 操作面板“新建空白页面”】完整链路。
+- **自治 Issue 任务中枢与异常追踪**：
+  - 纯后台无感运行：Agent 自动从 GitHub Issues 拉取任务并执行，无需人工引导；
+  - 画布报错、未知组件、Schema 缺失时，自动向 GitHub Issues 提报结构化故障快照。
 - **开箱即用体验**：
   - 免配置独立调试 Chrome 自动按需拉起，隔离日常 Cookie 与插件；
   - 标准 MCP Server 协议封装，单条配置即连。
@@ -78,6 +81,7 @@ agent-core bootstrap
 
 ### 提供的 MCP 工具列表
 
+#### 1. 画布与低代码 IDE 操作工具
 | 工具名称 | 功能描述 |
 | :--- | :--- |
 | `open_blank_canvas` | 自动在 IDE 中执行【工程 -> 开始工作 -> 新建空白页面】，重置并进入全新空白画布 |
@@ -87,3 +91,12 @@ agent-core bootstrap
 | `get_component_def` | 获取指定组件的 TypeScript 属性定义与规范说明 |
 | `click_ui_element` | 根据可见文本点击/高亮指定节点内的 DOM 元素 |
 | `bootstrap_assets` | 在线提取当前连接画布中的全量组件资产 |
+
+#### 2. 自治 GitHub Issues 任务与异常闭环工具
+| 工具名称 | 功能描述 |
+| :--- | :--- |
+| `github_list_issues` | 获取待办需求/任务 Issues 列表（支持 state/labels 过滤，零浏览器依赖） |
+| `github_get_issue` | 获取指定 Issue 标题、需求描述与评论记录 |
+| `github_create_issue` | 运行时发现未知组件、Bridge 故障或未受控行为时自动提报 Issue |
+| `github_comment_issue` | 在指定 Issue 下回填执行结果或验证进展 |
+| `github_close_issue` | 任务完成并校验通过后自动关闭 Issue |
