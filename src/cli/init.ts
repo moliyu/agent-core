@@ -1,0 +1,201 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { DEFAULT_CONFIG } from "../workspace/context.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export interface InitOptions {
+  targetDir?: string;
+  port?: number;
+  urlMatch?: string;
+  silent?: boolean;
+}
+
+export function runInit(options: InitOptions = {}): { targetDir: string } {
+  const targetDir = path.resolve(options.targetDir || process.cwd());
+  const log = (msg: string) => {
+    if (!options.silent) {
+      console.log(msg);
+    }
+  };
+
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  // 1. 生成 oasis.config.json
+  const configPath = path.join(targetDir, "oasis.config.json");
+  if (!fs.existsSync(configPath)) {
+    const configData = {
+      port: options.port ?? DEFAULT_CONFIG.port,
+      urlMatch: options.urlMatch ?? DEFAULT_CONFIG.urlMatch,
+      userDataDir: DEFAULT_CONFIG.userDataDir,
+      componentsDir: DEFAULT_CONFIG.componentsDir,
+      presetsDir: DEFAULT_CONFIG.presetsDir,
+    };
+    fs.writeFileSync(configPath, JSON.stringify(configData, null, 2), "utf-8");
+    log(`[agent-core] 创建配置文件: ${configPath}`);
+  } else {
+    log(`[agent-core] 配置文件已存在: ${configPath}`);
+  }
+
+  // 2. 生成 tsconfig.json (支持工作区内 TS 类型推断与检查)
+  const tsconfigPath = path.join(targetDir, "tsconfig.json");
+  if (!fs.existsSync(tsconfigPath)) {
+    const tsconfigData = {
+      compilerOptions: {
+        target: "ES2022",
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        strict: true,
+        skipLibCheck: true,
+      },
+      include: ["components/**/*", "presets/**/*"],
+    };
+    fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfigData, null, 2), "utf-8");
+    log(`[agent-core] 创建 TS 配置: ${tsconfigPath}`);
+  }
+
+  // 3. 生成 .gitignore
+  const gitignorePath = path.join(targetDir, ".gitignore");
+  if (!fs.existsSync(gitignorePath)) {
+    const gitignoreContent = `.oasis-profile/
+node_modules/
+dist/
+*.log
+`;
+    fs.writeFileSync(gitignorePath, gitignoreContent, "utf-8");
+    log(`[agent-core] 创建 .gitignore: ${gitignorePath}`);
+  }
+
+  // 4. 创建 components/ 目录并复制内置基础原子组件规范 (Text, Tag, Button, Container)
+  const componentsDir = path.join(targetDir, DEFAULT_CONFIG.componentsDir);
+  if (!fs.existsSync(componentsDir)) {
+    fs.mkdirSync(componentsDir, { recursive: true });
+  }
+
+  // 尝试从 templates/components 复制初始原子组件资产
+  const templateComponentsDir = path.resolve(__dirname, "../../templates/components");
+  if (fs.existsSync(templateComponentsDir)) {
+    const templateFiles = fs.readdirSync(templateComponentsDir);
+    for (const file of templateFiles) {
+      const srcPath = path.join(templateComponentsDir, file);
+      const destPath = path.join(componentsDir, file);
+      if (!fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+    log(`[agent-core] 注入基础原子组件规范 (Text, Tag, Button, Container): ${componentsDir}`);
+  }
+
+  const readmePath = path.join(componentsDir, "README.md");
+  if (!fs.existsSync(readmePath)) {
+    const readmeContent = `# Oasis 组件规范资产 (Code-as-Asset)
+
+本目录内置了 Oasis 基础原子组件规范 (Text, Tag, Button, Container)，
+每个组件包含严格的 TypeScript 类型接口定义、合法枚举联合类型及推荐配置预设。
+Agent 接入后可直接按此规范生成和修改页面 UI。
+`;
+    fs.writeFileSync(readmePath, readmeContent, "utf-8");
+  }
+
+  // 5. 创建 presets/ 目录及初始模板
+  const presetsDir = path.join(targetDir, DEFAULT_CONFIG.presetsDir);
+  if (!fs.existsSync(presetsDir)) {
+    fs.mkdirSync(presetsDir, { recursive: true });
+  }
+  const presetSamplePath = path.join(presetsDir, "page-templates.ts");
+  if (!fs.existsSync(presetSamplePath)) {
+    const presetSampleContent = `/**
+ * Oasis 页面与复杂组件预设模板
+ */
+
+export interface PageLayoutPreset {
+  name: string;
+  description: string;
+  structure: Record<string, any>;
+}
+
+export const standardFormPreset: PageLayoutPreset = {
+  name: "标准表单查询页",
+  description: "顶部查询卡片 + 中部操作栏 + 底部数据表格",
+  structure: {},
+};
+`;
+    fs.writeFileSync(presetSamplePath, presetSampleContent, "utf-8");
+  }
+
+  // 6. 创建 AGENTS.md (供 Codex, Cursor, Claude 等 Agent 快速识别低代码指令上下文)
+  const agentsMdPath = path.join(targetDir, "AGENTS.md");
+  if (!fs.existsSync(agentsMdPath)) {
+    const agentsMdContent = `# Oasis Low-Code Project Instructions
+
+本工作区是一个 Oasis 低代码可视化页面编排工程。
+
+## 可用 MCP 工具集 (oasis-editor)
+你拥有对 Oasis 画布的直接读写工具：
+- \`inspect_ui_tree\`: 查看画布组件树（推荐 \`mode: "outline"\`，低 Token 消耗）
+- \`edit_ui_tree\`: 编辑画布（\`action: "insert"\` 插入节点、\`action: "update"\` 修改属性、\`action: "delete"\` 删除节点）
+- \`get_ui_components\`: 查看可用组件列表
+- \`get_component_def\`: 查看指定组件的属性定义与预设
+- \`click_ui_element\`: 点击/高亮选中画布中的节点
+- \`open_blank_canvas\`: 自动执行【工程 -> 开始工作 -> 新建空白页面】，重置并进入全新空白画布。当刚进入 IDE 页面、画布 Bridge 未就绪或用户要求新建空白页面时直接调用此工具。
+
+## 组件资产规范 (components/)
+- \`Container\`: 唯一的布局容器组件（支持 Flex 布局），其他组件严禁作为父级容器嵌套子节点。
+- \`Text\`: 文本节点，提供 pageTitle、sectionTitle、body、secondary 等预设。
+- \`Tag\`: 状态胶囊节点，提供 success、warning、error 等预设。
+- \`Button\`: 操作按钮节点，提供 primaryAction、secondaryAction、dangerDelete 等预设。
+详细设计规范与排版菜谱见 \`components/COMPONENTS.md\`。
+
+## 行为准则
+当用户提出“配置低代码界面”、“查看页面”、“修改界面”等诉求时：
+1. 若当前尚未进入画布（收到 Bridge 未就绪提示）或用户要求从头新建页面，直接调用 \`open_blank_canvas\` 初始化空白画布；
+2. 优先调用 \`inspect_ui_tree\` 查看当前画布状态与节点 ID；
+3. 结合 \`components/\` 下的规范与预设生成合理的节点结构；
+4. 调用 \`edit_ui_tree\` 直接写入或更新画布。
+`;
+    fs.writeFileSync(agentsMdPath, agentsMdContent, "utf-8");
+  }
+
+  // 7. 注入工作区专用 Agent Skills (.agents/skills/)
+  const templateSkillsDir = path.resolve(__dirname, "../../templates/skills");
+  const targetSkillsDir = path.join(targetDir, ".agents/skills");
+  if (fs.existsSync(templateSkillsDir)) {
+    function copyDirRecursive(src: string, dest: string) {
+      if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true });
+      }
+      for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+        const srcPath = path.join(src, entry.name);
+        const destPath = path.join(dest, entry.name);
+        if (entry.isDirectory()) {
+          copyDirRecursive(srcPath, destPath);
+        } else {
+          if (!fs.existsSync(destPath)) {
+            fs.copyFileSync(srcPath, destPath);
+          }
+        }
+      }
+    }
+    copyDirRecursive(templateSkillsDir, targetSkillsDir);
+    log(`[agent-core] 注入工作区专属 Skills: ${targetSkillsDir}`);
+  }
+
+  log(`
+🎉 Oasis Agent 工作区初始化成功！
+工作目录: ${targetDir}
+已内置原子组件规范: components/ (Text, Tag, Button, Container)
+
+接下来你只需：
+直接在 Cursor / Claude / Windsurf / Pi 中配置本 MCP 服务即可开始使用：
+  命令: agent-core
+  参数: ["mcp"]
+
+(注: MCP 服务会在你需要操作画布时自动按需拉起并连接浏览器，无需手动执行任何启动命令)
+`);
+
+  return { targetDir };
+}
