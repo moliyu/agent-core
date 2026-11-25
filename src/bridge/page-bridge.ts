@@ -30,7 +30,11 @@ const MAX_FETCH_TEXT_CHARS = 30000;
 export class PageBridge {
   public readonly networkMonitor: NetworkMonitor;
 
-  constructor(public readonly connection: ICdpConnection, public readonly targetUrl?: string) {
+  constructor(
+    public readonly connection: ICdpConnection,
+    public readonly targetUrl?: string,
+    public readonly targetId?: string
+  ) {
     this.networkMonitor = new NetworkMonitor(connection);
   }
 

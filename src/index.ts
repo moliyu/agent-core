@@ -12,10 +12,36 @@ export interface ConnectOptions {
   port?: number;
   host?: string;
   /**
+   * 优先重连的上一次操作页 targetId
+   */
+  preferredTargetId?: string;
+  /**
+   * 排除的 targetId 列表（如已确认非画布的标签页）
+   */
+  excludeTargetIds?: string[];
+  /**
    * 自动过滤目标 Tab：可以用字符串包含或正则表达式匹配 URL / 标题
    */
   targetFilter?: (target: CdpTarget) => boolean;
   timeoutMs?: number;
+}
+
+/**
+ * 判断标签页是否为非编辑态辅助页（DevTools、内置页、预览页）
+ */
+export function isNonEditorTarget(target: CdpTarget): boolean {
+  try {
+    const u = new URL(target.url);
+    if (u.protocol === "devtools:" || u.protocol === "chrome:") {
+      return true;
+    }
+    if (u.pathname === "/preview" || u.pathname.endsWith("/preview")) {
+      return true;
+    }
+  } catch {
+    // ignore invalid URL
+  }
+  return target.url === "about:blank";
 }
 
 export class OasisAgentCore {
@@ -42,19 +68,29 @@ export class OasisAgentCore {
 
     // 优先从指定端口的 HTTP /json/list 获取当前活跃页面
     const targets = await listCdpTargets(port, host, timeoutMs);
-    const pages = targets.filter((t) => t.type === "page" && t.webSocketDebuggerUrl);
+    const excluded = new Set(this.options.excludeTargetIds ?? []);
+    const pages = targets.filter(
+      (t) => t.type === "page" && t.webSocketDebuggerUrl && !excluded.has(t.id)
+    );
     if (pages.length === 0) {
       throw new Error(`在 http://${host}:${port} 未找到可连接的网页标签页 (targets count: ${targets.length})`);
     }
 
+    const editorCandidates = pages.filter((p) => !isNonEditorTarget(p));
+    const searchPool = editorCandidates.length > 0 ? editorCandidates : pages;
+
     let target: CdpTarget | undefined;
-    if (this.options.targetFilter) {
-      target = pages.find(this.options.targetFilter);
+    if (this.options.preferredTargetId) {
+      target = searchPool.find((p) => p.id === this.options.preferredTargetId);
+    }
+
+    if (!target && this.options.targetFilter) {
+      target = searchPool.find(this.options.targetFilter);
     }
 
     if (!target) {
       // 智能识别 Oasis / 低代码 / IDE / 平台页面
-      target = pages.find((p) => {
+      target = searchPool.find((p) => {
         const text = (p.title + " " + p.url).toLowerCase();
         return (
           text.includes("oasis") ||
@@ -69,7 +105,7 @@ export class OasisAgentCore {
 
     if (!target) {
       // 排除内部调试页面与 about:blank，若用户只打开了一个常规网页，直接选用
-      const realPages = pages.filter(
+      const realPages = searchPool.filter(
         (p) => !p.url.startsWith("chrome://") && p.url !== "about:blank"
       );
       if (realPages.length === 1) {
@@ -79,8 +115,8 @@ export class OasisAgentCore {
 
     if (!target) {
       target =
-        pages.find((p) => !p.url.startsWith("chrome://") && p.url !== "about:blank") ||
-        pages[0];
+        searchPool.find((p) => !p.url.startsWith("chrome://") && p.url !== "about:blank") ||
+        searchPool[0];
     }
 
     if (!target.webSocketDebuggerUrl) {
@@ -91,7 +127,7 @@ export class OasisAgentCore {
     await directConn.connect(timeoutMs);
     this.connection = directConn;
 
-    this.bridge = new PageBridge(directConn, target.url);
+    this.bridge = new PageBridge(directConn, target.url, target.id);
     await this.bridge.init();
 
     return this.bridge;

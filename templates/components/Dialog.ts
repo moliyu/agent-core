@@ -30,9 +30,9 @@ export interface DialogFooterItem {
  * 1. **Page Context 能力**：
  *    - 配置非空 `alias` 后，可通过 `context[alias].onOpenDialog(options?)` 和 `context[alias].onHideDialog(options?)` 打开/关闭弹窗；
  *    - 弹窗内部子组件可直接通过 `context.onOpenDialog` / `context.onHideDialog` 控制当前弹窗（即使 `alias` 为空）。
- * 2. **设计态打开表单技巧（重要）**：
- *    - 设计态下 `GridPlus` 的新建/编辑按钮不会直接弹出关联的 `Dialog`；
- *    - 业务人员通常开启 `showButton: true`（或配置一个隐藏按钮调用 `context[alias].onOpenDialog()`），以便在配置器中随时点开弹窗编辑内部的 `Form`。
+ * 2. **设计态行为与隐藏打开按钮（重要）**：
+ *    - **IDE 设计态不会直接唤起弹窗**：配置完 `Dialog` 后，**严禁**在 IDE 中点击业务按钮或调用 `click_ui_element` 试图唤起/验证弹窗打开；直接通过 `edit_ui_tree` 将 `Form` 等子组件插入 `Dialog` 节点即可，无需先打开弹窗；
+ *    - **保留隐藏的弹窗打开按钮**：当弹窗由表格/外部按钮通过 `context[alias].onOpenDialog()` 唤起时，仍需保留一个隐藏的打开按钮（如设置 `showButton: true` 并隐藏按钮，或放置一个 `hidden: true` 的 `Button` 调用 `context[alias].onOpenDialog()`），以便人工在配置器里随时点开编辑内部的 `Form`。
  * 3. **内容挂载模式**：
  *    - 无直接子组件时渲染内置 `slots.Container`；一旦向 `Dialog` 直接添加子组件（如 `Form`），则直接渲染这些子组件。
  */

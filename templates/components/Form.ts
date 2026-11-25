@@ -70,8 +70,9 @@ export type FormEventItem = EventItem<
  *    - **BE 绑定表单**：仅在 BM/BE 已明确确认时配置 `beName`、`parentBeName`、`BEResultFields`、业务 `rules`，并保持页面根 BM 对齐；
  *    - **未绑定/函数驱动表单**：保留 `type: "be"` 默认值并将 `beName`、`parentBeName` 留空（当前没有 Agent 可配置的 `api` 表单路径）。
  *      **严禁**在未绑定表单中配置 `BEResultFields`、`id`、`parentId`、`dataset`，也不要调用内置 `toGet()` / `submitForm()`（会拼接空 BE URL）；数据读写应通过 `context.form.setFormFields` / `getFormFields` 或 `context[alias]` 完成。
- * 3. **字段区结构**：
- *    - `Form` 内部应包含一个 `FormItemContainer` 作为字段区入口，不要直接把字段控件堆在 `Form` 根下。
+ * 3. **字段区结构与布局**：
+ *    - 简单 1~3 列等宽分栏：可使用模板内置的 `FormItemContainer` 承载字段控件；
+ *    - **并非 `Form` 下只能放 `FormItemContainer`**：如果是复杂布局（如分组、多行不同列数、跨列、需要 `gap` 或自定义 Flex/Grid），**可以直接在 `Form` 下放 `Container`**（也可在 `FormItemContainer` 内放 `Container`），子树内的字段控件同样会正常继承 `Form` 的 `labelWidth`、校验与提交能力。
  */
 export interface FormProps {
   /** 编辑器向导完成标记，默认: true */

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -7,7 +8,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { OasisAgentCore } from "../index.js";
+import { OasisAgentCore, isNonEditorTarget } from "../index.js";
 import { OasisEditorBridge } from "../bridge/oasis-editor-bridge.js";
 import { PageBridge } from "../bridge/page-bridge.js";
 import { openBlankCanvas } from "../bridge/ide-actions.js";
@@ -57,8 +58,43 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
   let pageBridgeInstance: PageBridge | null = null;
   let editorBridge: OasisEditorBridge | null = null;
 
-  async function getOrInitPageBridge(): Promise<PageBridge> {
-    if (pageBridgeInstance) {
+  const lastTargetStatePath = path.join(os.tmpdir(), `oasis-agent-last-target-${port}.json`);
+
+  function loadLastTargetId(): string | undefined {
+    try {
+      if (!fs.existsSync(lastTargetStatePath)) return undefined;
+      const raw = JSON.parse(fs.readFileSync(lastTargetStatePath, "utf-8"));
+      return typeof raw?.targetId === "string" && raw.targetId ? raw.targetId : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  function saveLastTargetId(targetId?: string, url?: string): void {
+    if (!targetId) return;
+    try {
+      fs.writeFileSync(
+        lastTargetStatePath,
+        JSON.stringify({ targetId, url: url || "", updatedAt: new Date().toISOString() }, null, 2),
+        "utf-8"
+      );
+    } catch {
+      // ignore state persistence failures
+    }
+  }
+
+  function resetBridgeState(): void {
+    try {
+      pageBridgeInstance?.connection?.close();
+    } catch {
+      // ignore close errors
+    }
+    pageBridgeInstance = null;
+    editorBridge = null;
+  }
+
+  async function getOrInitPageBridge(excludeTargetIds?: string[]): Promise<PageBridge> {
+    if (pageBridgeInstance && !excludeTargetIds?.includes(pageBridgeInstance.targetId ?? "")) {
       try {
         const ok = await pageBridgeInstance.evaluate<boolean>("Boolean(window)");
         if (ok) return pageBridgeInstance;
@@ -80,7 +116,12 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
 
     pageBridgeInstance = await OasisAgentCore.connect({
       port,
+      preferredTargetId: loadLastTargetId(),
+      excludeTargetIds,
       targetFilter: (target) => {
+        if (isNonEditorTarget(target)) {
+          return false;
+        }
         if (urlMatch && urlMatch !== "oasis") {
           return target.url.includes(urlMatch) || target.title.includes(urlMatch);
         }
@@ -103,23 +144,40 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
     if (editorBridge) {
       try {
         const avail = await editorBridge.getAvailability();
-        if (avail && avail.available) return editorBridge;
+        if (avail && avail.available) {
+          saveLastTargetId(editorBridge.pageBridge.targetId, editorBridge.pageBridge.targetUrl);
+          return editorBridge;
+        }
       } catch {
         editorBridge = null;
       }
     }
 
-    const pageBridge = await getOrInitPageBridge();
-    editorBridge = new OasisEditorBridge(pageBridge);
-
-    try {
-      await editorBridge.waitForReady(5000);
-      return editorBridge;
-    } catch {
-      throw new Error(
-        `Oasis 画布通信 Bridge 尚未就绪。若当前尚未打开或尚未登录 Oasis IDE，请先在已打开的 Chrome 窗口中访问对应 IDE 地址并完成登录；若已登录并停留在 IDE 外层页面，可调用 [open_blank_canvas] 自动新建空白页面，或手动进入画布后再重试。`
-      );
+    const triedIds: string[] = [];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let pageBridge: PageBridge;
+      try {
+        pageBridge = await getOrInitPageBridge(triedIds.length > 0 ? triedIds : undefined);
+      } catch {
+        break;
+      }
+      const candidate = new OasisEditorBridge(pageBridge);
+      try {
+        await candidate.waitForReady(5000);
+        editorBridge = candidate;
+        saveLastTargetId(pageBridge.targetId, pageBridge.targetUrl);
+        return editorBridge;
+      } catch {
+        if (pageBridge.targetId) {
+          triedIds.push(pageBridge.targetId);
+        }
+        resetBridgeState();
+      }
     }
+
+    throw new Error(
+      `Oasis 画布通信 Bridge 尚未就绪。若当前尚未打开或尚未登录 Oasis IDE，请先在已打开的 Chrome 窗口中访问对应 IDE 地址并完成登录；若已登录并停留在 IDE 外层页面，可调用 [open_blank_canvas] 自动新建空白页面，或手动进入画布后再重试。`
+    );
   }
 
   const allTools = [...allOasisTools, ...allGitHubTools];
@@ -193,6 +251,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
         });
         editorBridge = new OasisEditorBridge(pageBridge);
         await editorBridge.waitForReady(15000);
+        saveLastTargetId(pageBridge.targetId, pageBridge.targetUrl);
         return {
           content: [
             {

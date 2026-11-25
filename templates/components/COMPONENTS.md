@@ -12,8 +12,8 @@
 | **`Text`** | 纯文本展示 | 页面标题、副标题、说明段落、辅助文字 | **纯叶子节点**<br/>无子组件 | `text`, `style: { fontSize, fontWeight, color }` |
 | **`Tag`** | 状态与标签 | 审批状态、数据徽标、分类标签、可关闭胶囊 | **纯叶子节点**<br/>无子组件 | `content`, `tagColor="success/error/..."`, `isBorder` |
 | **`Button`** | 交互触发 | 主行动点、次要取消、删除二次确认、行内跳转 | **纯叶子节点**<br/>无子组件 | `label`, `theme`, `variant`, `confirmType="popConfirm"` |
-| **`Form`** | 表单容器 | 结构化数据录入、校验、BE 提交或函数驱动表单 | **Canvas 容器**<br/>内部应放 `FormItemContainer` | `alias`, `beName`, `columns`, `layout`, `rules`, `events` |
-| **`FormItemContainer`** | 表单字段区 | `Form` 的唯一字段区入口，自动按 `Form.columns` 分栏 | **Canvas 容器**<br/>放字段控件或 `Container` | 无持久化 props（传 `{}`，严禁配置 `gap`） |
+| **`Form`** | 表单容器 | 结构化数据录入、校验、BE 提交或函数驱动表单 | **Canvas 容器**<br/>可放 `FormItemContainer` 或 `Container` | `alias`, `beName`, `columns`, `layout`, `rules`, `events` |
+| **`FormItemContainer`** | 表单分栏容器 | 简单 1~3 列等宽分栏容器（非唯一子容器） | **Canvas 容器**<br/>放字段控件或 `Container` | 无持久化 props（传 `{}`，严禁配置 `gap`） |
 | **`GridPlus`** | 数据表格 | BE 列表展示、分页、排序、筛选、行内编辑、CRUD 操作 | **业务复合组件**<br/>通过 `formDialogProperty` 关联弹窗表单 | `alias`（必填）, `isFinishGuide=true`, `metaData.beName`, `columns`, `pagination` |
 | **`Dialog`** | 模态弹窗 | 承载表单弹窗、确认提示、详情抽屉 | **Canvas 容器**<br/>可直接放 `Form` 等子组件 | `alias`, `headTitle`, `showButton`, `footerContent` |
 | **`Input`** | 表单输入 | 文本、密码、多行文本、数字录入 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `displayName`, `type`, `required`, `maxLength` |
@@ -172,6 +172,9 @@
    * **纵向父容器 (`flexDirection: "column"`)**：头部栏、工具栏、列表行、普通卡片等只需包裹自身高度的子 `Container`，**必须显式设置 `flexRatio: 0`**，否则会与兄弟容器均分高度或被纵向拉伸。
    * **横向父容器 (`flexDirection: "row"`)**：图标容器、按钮组、标签组、右侧状态列等固定/自适应宽度的子 `Container`，**必须显式设置 `flexRatio: 0`**；仅需要占满剩余宽度的主内容区保留 `flexRatio: 1`（或按比例设为 `2`/`3`）。
    * **固定宽高生效条件**：`width` / `height` 仅分别在 `widthType: "fixed"` / `heightType: "fixed"` 时生效；`auto` 模式下请使用 `minWidth`/`maxWidth`/`minHeight`/`maxHeight` 或 `style`。
+5. **⚠️ 可选属性严禁传 `null`（避免“该值不能为 null”校验报错）**：
+   * IDE 属性面板对所有表单控件（`Input` / `InputNumber`、`Select`、`Transform`、`AutoComplete`、`TreeSelect`、`DatetimePicker`、`Prompt`、`CheckBox`、`Radio`、`Switch`、`SliderInput`、`SingleUpload`、`MultipleUpload`、`FileUpload`、`CodeEditor`、`ColorPicker`、`IconSelector`、`Tinymce`、`VariableSelector` 等）的 `defaultValue`、`placeholder`、`labelWidth`、`min`、`max` 等基础属性均做非 `null` 校验。
+   * 无默认值或不需要某项配置时，**直接省略该字段（或按需传空字符串 `""`）**，**严禁传入 `null`**。
 
 ---
 
@@ -233,10 +236,10 @@ Oasis 中 `Container` 的 `flexRatio` 默认值为 `1`（相当于 CSS `flex: 1 
 ## 5. 复杂业务组件规范：`Form` 与 `GridPlus`
 
 ### 5.1 Form 表单的双路径布局与绑定规范
-1. **结构树规则**：`Form` 内部必须通过 `FormItemContainer` 承载字段区域（`FormItemContainer` 本身无任何可配置 props，传入 `{}`）。
+1. **结构树规则**：`Form` 下面**并非只能放 `FormItemContainer`**（`FormItemContainer` 本身无任何可配置 props，传入 `{}`）。
 2. **两种字段区排版路径**：
    - **简单等宽分栏**：`Form.columns` 设为 `"1"` / `"2"` / `"3"`，字段控件直接放在 `FormItemContainer` 下，运行时自动按 `repeat(columns, minmax(0, 1fr))` 均分。
-   - **灵活布局（含 `gap`、分组、跨列）**：`Form.columns` 设为 `"1"`，在 `FormItemContainer` 下放入一个 `Container`（通过 `Container.style` 配置 Flex/Grid 与 `gap`），再把字段控件放入该 `Container`。
+   - **复杂/灵活布局（含 `gap`、分组、跨列、多区块）**：**可以直接在 `Form` 下放 `Container`**（或在 `FormItemContainer` 下放 `Container`），通过 `Container.style` 配置 Flex/Grid 与 `gap`，再把字段控件放入该 `Container`。两条路径下的字段都能正常继承 `Form` 的 `labelWidth`、校验与提交行为。
 3. **BE 绑定 vs 未绑定原型表单**：
    - **未绑定/函数驱动表单**：保持 `type: "be"` 且将 `beName`、`parentBeName` 留空，**严禁**配置 `BEResultFields`、`id`、`parentId`、`dataset`，也不要调用内置 `toGet()` / `submitForm()`；统一通过 `context.form.setFormFields` / `getFormFields` 或 `context[alias]` 读写。
    - **BE 绑定表单**：仅在 BM/BE 已确认后配置 `beName`、`BEResultFields` 与业务 `rules`。
@@ -253,9 +256,10 @@ Oasis 中 `Container` 的 `flexRatio` 默认值为 `1`（相当于 CSS `flex: 1 
    - `columns[].events` 与 `inlineEditing.events` 是**数组**：`[{ trigger, code }]`；
    - `globalOperationConfig.buttons[].event`、`rowOperationConfig.buttons[].event` 与 `customerProperty.events` 是**包装对象**：`{ id, events: [{ trigger, code }] }`；内置 `add`/`update`/`delete` 无自定义逻辑时直接省略 `event`。
 
-### 5.3 `Dialog` 弹窗与设计态打开技巧
-* **标题与底部按钮字段**：弹窗标题使用 `headTitle`（不是 `title`）；底部按钮使用 `footer: true` + `footerContent: [...]`（提交表单用 `buttonBehavior: "submit"` + `formAlias`，关闭弹窗用 `buttonBehavior: "cancel"` + `isCloseDialog: true`）。
-* **设计态打开表单技巧**：在 IDE 配置器中直接点击 `GridPlus` 的新建/编辑按钮不会弹出关联的 `Dialog`。业务人员通常会保留 `Dialog.showButton: true`（或配置一个隐藏按钮调用 `context[dialogAlias].onOpenDialog()`），以便在配置器里随时点开编辑内部的 `Form`。
+### 5.3 `Dialog` / `Drawer` 弹窗与抽屉设计态规范
+* **标题与底部按钮字段**：`Dialog` 标题使用 `headTitle`（不是 `title`）；底部按钮使用 `footer: true` + `footerContent: [...]`（提交表单用 `buttonBehavior: "submit"` + `formAlias`，关闭弹窗用 `buttonBehavior: "cancel"` + `isCloseDialog: true`）。`Drawer` 则使用 `title` 及自动生成的 `DrawerExtra` / `DrawerFooter` Linked Node。
+* **IDE 设计态不会直接唤起弹窗/抽屉**：在 IDE 配置器中直接点击 `GridPlus` 新建/编辑按钮或普通业务 `Button` 不会弹出关联的 `Dialog` / `Drawer`。配置完 `Dialog` / `Drawer` 后，**严禁**点击画布触发按钮或调用 `click_ui_element` 试图唤起/验证打开；往内部添加 `Form` 等组件时直接通过 `edit_ui_tree` 插入节点即可。
+* **保留隐藏的打开按钮**：由业务按钮通过 `context[alias].onOpenDialog()` / `onShowDrawer()` 唤起时，仍需保留一个隐藏的打开按钮（如保留 `showButton: true` 配合隐藏样式，或配置一个 `hidden: true` 的 `Button` 调用 `onOpenDialog()` / `onShowDrawer()`），以便人工在配置器里随时点开编辑内部内容。
 
 ---
 

@@ -8,8 +8,9 @@ import type { EventItem, ExpressionValue, MessageValue, StyleProps } from "./typ
  *
  * @usageGuidelines
  * - 非空 `alias` 会向页面上下文发布 `onShowDrawer()` 与 `onHideDrawer()`；
+ * - **IDE 设计态不会直接唤起抽屉**：配置完 `Drawer` 后，**严禁**在 IDE 中点击业务按钮或调用 `click_ui_element` 试图唤起/验证抽屉打开；写入内部内容时先用 `inspect_ui_tree` 读取真实节点 ID，再直接通过 `edit_ui_tree` 插入子组件即可；
+ * - **保留隐藏的抽屉打开按钮**：当抽屉由表格/外部按钮通过 `context[alias].onShowDrawer()` 唤起时，建议保留一个隐藏的打开按钮（如设置 `showButton: true` 并隐藏按钮，或放置一个 `hidden: true` 的 `Button` 调用 `context[alias].onShowDrawer()`），以便人工在配置器里随时点开编辑内部节点；
  * - 新建 `Drawer` 会自动生成 `DrawerExtra`（仅放 `Button`）、内容容器和 `DrawerFooter` 三个 Linked Node；
- * - 写入内部内容前须先通过 `inspect_ui_tree` 读取真实节点 ID；
  * - 自定义宽度请直接配置 `width`（如 `600`、`"600px"`、`"60vw"`），使用 `size` 预设时省略 `width`。
  */
 export interface DrawerProps {

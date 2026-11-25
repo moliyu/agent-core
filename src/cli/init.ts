@@ -182,7 +182,7 @@ export const drawerDetailPagePreset: PageLayoutPreset = {
 - \`Text\`: 文本节点，提供 pageTitle、sectionTitle、body、secondary 等预设。
 - \`Tag\`: 状态胶囊节点，提供 success、warning、error 等预设。
 - \`Button\`: 操作按钮节点，提供 primaryAction、secondaryAction、dangerDelete 等预设。
-- \`Form\` / \`FormItemContainer\`: 表单容器与唯一字段区入口，支持 1~3 列等宽分栏与自定义 Container 灵活布局。
+- \`Form\` / \`FormItemContainer\`: 表单容器与等宽分栏容器；简单 1~3 列等宽分栏可用 \`FormItemContainer\`，复杂布局（分组、\`gap\`、跨列等）可直接在 \`Form\` 下使用 \`Container\`。
 - \`GridPlus\` / \`Grid\`: 企业级数据表格，支持 BE 元数据查询、分页、排序、筛选、行内编辑与 CRUD 操作。
 - \`Dialog\` / \`Drawer\`: 模态对话框与侧滑抽屉容器，分别支持 \`headTitle\`/\`footerContent\` 与 \`DrawerExtra\`/\`DrawerFooter\`。
 - \`PageRoot\`: 页面根节点（\`ROOT\`），承载 \`bmName\`、作用域 \`css\` 与默认 BE 上下文。
@@ -196,7 +196,9 @@ export const drawerDetailPagePreset: PageLayoutPreset = {
 1. 若当前尚未进入画布（收到 Bridge 未就绪提示）或用户要求从头新建页面，直接调用 \`open_blank_canvas\` 初始化空白画布；
 2. 优先调用 \`inspect_ui_tree\` 查看当前画布状态与节点 ID；
 3. 结合 \`components/\` 下的规范与预设生成合理的节点结构；
-4. 调用 \`edit_ui_tree\` 直接写入或更新画布。
+4. 调用 \`edit_ui_tree\` 直接写入或更新画布；
+5. **配置 \`Dialog\` / \`Drawer\` 时的铁律**：IDE 设计态不会直接唤起弹窗或抽屉，配置完后**严禁**去点击触发按钮或调用 \`click_ui_element\` 试图打开验证（直接通过 \`edit_ui_tree\` 往 \`Dialog\` / \`Drawer\` 节点内插入子组件即可）；同时需**保留一个隐藏的打开按钮**（如 \`hidden: true\` 的触发 \`Button\` 调用 \`context[alias].onOpenDialog()\` / \`onShowDrawer()\`，或按需保留 \`showButton\`），方便人工在配置器里随时点开编辑；
+6. **可选属性严禁传 \`null\`**：所有组件（尤其是 \`Input\`/\`InputNumber\` 等 19 个表单控件）的 \`defaultValue\`、\`placeholder\`、\`labelWidth\` 等可选属性在“无默认值/未配置”时，直接省略该字段或传 \`""\`，**严禁传 \`null\`**（否则 IDE 属性面板会报错 \`该值不能为 null\`）。
 `;
     fs.writeFileSync(agentsMdPath, agentsMdContent, "utf-8");
   }

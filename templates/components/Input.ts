@@ -9,7 +9,7 @@ import type { FormValidationRule } from "./Form.js";
  * （源码: `component-schemas-v2/Input/index.ts`）。
  *
  * @usageGuidelines
- * - 必须放置在 `FormItemContainer`（或其中的 `Container`）内，并通过 `fieldName` 绑定表单字段；
+ * - 必须放置在 `Form` 子树内的 `FormItemContainer` 或 `Container` 中，并通过 `fieldName` 绑定表单字段；
  * - `fieldName` 必须为稳定的字面量字符串（**不支持** `JSExpression`）；
  * - `unitPickerAlias` 仅用于 Form `UnitParty` 参与方标识字段，普通输入框保持空字符串即可。
  */
@@ -42,7 +42,7 @@ export interface InputProps {
   disabled?: ExpressionValue<boolean>;
   /** 是否只读，默认: false */
   readOnly?: ExpressionValue<boolean>;
-  /** 默认值 */
+  /** 默认值（无默认值时请直接省略或传 `""`，严禁传 `null`，否则属性面板会报“该值不能为 null”） */
   defaultValue?: ExpressionValue<string | number>;
   /** 占位提示文本 */
   placeholder?: MessageValue<string>;
