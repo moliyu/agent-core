@@ -41,6 +41,10 @@ export interface ContainerBackgroundImage {
  * - 核心容器节点（Canvas），可以作为根节点或嵌套在其他 Container 中；
  * - 内部支持嵌套 Text、Button、Tag 及其他 Container；
  * - 常用作：水平工具栏 (flex row + space-between)、垂直卡片列表 (flex column)、居中内容块等；
+ * - **⚠️ `flexRatio` 默认值为 `1`**（运行时会自动输出 `style.flex = 1`）：
+ *   - 在 `flex-direction: column` 父容器下，头部栏、工具栏、行容器、普通卡片等**只需包裹自身高度**的容器**必须显式传 `flexRatio: 0`**，否则会被纵向均分拉伸；
+ *   - 在 `flex-direction: row` 父容器下，图标壳、按钮组、标签组、右侧状态列等**不参与平分宽度**的容器**必须显式传 `flexRatio: 0`**，仅需要撑满剩余宽度的主区域保留 `flexRatio: 1`；
+ * - **`width` / `height` 生效前提**：`width` 仅在 `widthType: "fixed"` 时生效，`height` 仅在 `heightType: "fixed"` 时生效；`auto` 模式下仅 `minWidth`/`maxWidth`/`minHeight`/`maxHeight` 生效；
  * - 子节点的增删改查应通过画布的 `edit_ui_tree` 工具完成，而不是写入 props 中。
  */
 export interface ContainerProps {
@@ -82,7 +86,10 @@ export interface ContainerProps {
   backgroundColor?: ExpressionValue<string>;
   /** 独立背景图配置 */
   backgroundImage?: ExpressionValue<ContainerBackgroundImage>;
-  /** Flex 放大缩小比例，默认: 1 */
+  /**
+   * Flex 放大缩小比例，默认: `1`（运行时会注入 `style.flex = 1`）。
+   * 不希望容器被父级 Flex 拉伸/均分时，**必须显式设为 `0`**。
+   */
   flexRatio?: ExpressionValue<number>;
   /** Flex 子元素间距，默认: "0"（例如: "8px", "16px"） */
   gap?: ExpressionValue<string>;
@@ -102,12 +109,14 @@ export interface ContainerProps {
  * Container 高频布局推荐预设 (Presets)
  */
 export const containerPresets = {
-  /** 顶部水平工具栏 (两端对齐：左侧标题，右侧操作按钮) */
+  /** 顶部水平工具栏 (两端对齐：左侧标题，右侧操作按钮；`flexRatio: 0` 防止被父级纵向拉伸) */
   headerToolbar: (): ContainerProps => ({
     display: "flex",
     flexDirection: "row",
     flexJustifyContent: "space-between",
     flexAlignItems: "center",
+    flexRatio: 0,
+    widthType: "fixed",
     width: "100%",
     gap: "12px",
     style: {
@@ -141,12 +150,14 @@ export const containerPresets = {
     },
   }),
 
-  /** 居中展示卡片外壳 (白色背景、圆角、阴影) */
+  /** 居中展示卡片外壳 (白色背景、圆角、阴影；默认 `flexRatio: 0` 包裹内容高度) */
   cardBox: (padding: string = "20px"): ContainerProps => ({
     display: "flex",
     flexDirection: "column",
     flexJustifyContent: "flex-start",
     flexAlignItems: "flex-start",
+    flexRatio: 0,
+    widthType: "fixed",
     width: "100%",
     backgroundColor: "#ffffff",
     style: {

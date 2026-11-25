@@ -162,9 +162,16 @@
        "flexDirection": "row",
        "flexJustifyContent": "space-between",
        "flexAlignItems": "center",
+       "flexRatio": 0,
+       "widthType": "fixed",
        "width": "100%"
      }
      ```
+4. **⚠️ `Container` 默认 `flexRatio: 1` 陷阱（极其重要）**：
+   * `Container` 运行时默认 `flexRatio: 1`（会向 DOM 注入 `style.flex = 1`）。
+   * **纵向父容器 (`flexDirection: "column"`)**：头部栏、工具栏、列表行、普通卡片等只需包裹自身高度的子 `Container`，**必须显式设置 `flexRatio: 0`**，否则会与兄弟容器均分高度或被纵向拉伸。
+   * **横向父容器 (`flexDirection: "row"`)**：图标容器、按钮组、标签组、右侧状态列等固定/自适应宽度的子 `Container`，**必须显式设置 `flexRatio: 0`**；仅需要占满剩余宽度的主内容区保留 `flexRatio: 1`（或按比例设为 `2`/`3`）。
+   * **固定宽高生效条件**：`width` / `height` 仅分别在 `widthType: "fixed"` / `heightType: "fixed"` 时生效；`auto` 模式下请使用 `minWidth`/`maxWidth`/`minHeight`/`maxHeight` 或 `style`。
 
 ---
 
