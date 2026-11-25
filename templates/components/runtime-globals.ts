@@ -202,17 +202,29 @@ export interface OasisSiteConfig {
 
 /** 内置路由跳转 (`router`) */
 export interface OasisRouter {
-  push: (path: string) => void;
-  replace: (path: string) => void;
+  /**
+   * 跳转路由，添加到历史记录中
+   * @param href 目标路径及查询参数
+   * @param newTab 为 `true` 时在浏览器新标签页打开；默认 `false` 沿用 App 内部页签导航
+   */
+  push: (href: string, newTab?: boolean) => void;
+  /** 跳转路由，替换当前历史记录 */
+  replace: (href: string) => void;
+  /** 回退 */
   back: () => void;
+  /** 移除当前路由（关闭当前页签） */
+  remove: () => void;
+  /** 当前 URL 的查询参数 */
   searchParams: URLSearchParams;
-  location: string | Record<string, unknown>;
-  buildUrl: (options: {
-    pathname: string;
-    params?: Record<string, unknown>;
-    oriParams?: Record<string, unknown>;
-    mergeStrategy?: "append" | "override";
-  }) => string;
+  /** 当前 URL 的路径名（如 `/test/current`） */
+  location: string;
+  /** 根据查询参数构建完整 URL */
+  buildUrl: (
+    pathname: string,
+    params: Record<string, unknown>,
+    oriParams?: URLSearchParams,
+    mergeStrategy?: "append" | "override",
+  ) => string;
 }
 
 /** 浏览器原生路由跳转 (`nativeRouter`) */

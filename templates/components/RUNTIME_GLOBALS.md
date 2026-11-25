@@ -24,7 +24,7 @@
 | **`sendMessage`** | 提示消息 | 函数 | `sendMessage(content, level?)`（`info` / `success` / `warning` / `error` / `loading`） |
 | **`user`** | 登录用户 | 对象 | `id`、`name`、`permissions`、`roles`、`language`、`positions.primaryPosition` / `currentPosition`（含 `positionId`、`positionName`、`buId`、`buName`、`buCode`、`characterId`） |
 | **`siteConfig`** | 站点配置 | 对象 | `tenantId`、`siteId`、`name`、`siteName`、`sitePath`、`siteCookieDomain`、`characterType`、`siteEnable`、`resources` |
-| **`router`** | 内置路由跳转 | 对象 | `push(path)`、`replace(path)`、`back()`、`searchParams`、`location`、`buildUrl({ pathname, params, oriParams?, mergeStrategy? })` |
+| **`router`** | 内置路由跳转 | 对象 | `push(href, newTab?)`、`replace(href)`、`back()`、`remove()`、`searchParams`、`location`、`buildUrl(pathname, params, oriParams?, mergeStrategy?)` |
 | **`nativeRouter`** | 浏览器跳转 | 对象 | `push(url)`、`replace(url)`、`back()`、`forward()`、`refresh()`、`prefetch(url)` |
 | **`pageTag`** | 页签管理 | 函数/对象 | `const { updateTitle } = pageTag; updateTitle(title, path?)` |
 | **`packagingProgress`** | `packagingProgress` | 对象 | `show(params?)`、`close()` |
@@ -63,13 +63,10 @@ confirm.showConfirm({
 ### 2.3 路由跳转与读取 URL 参数
 ```js
 const id = router?.searchParams?.get("Id");
-router.push(
-  router.buildUrl({
-    pathname: "/lead/detail",
-    params: { Id: id },
-    mergeStrategy: "override",
-  }),
-);
+// 当前 App 内部页签打开
+router.push(router.buildUrl("/lead/detail", { Id: id }));
+// 第二个参数 newTab = true 时在浏览器新标签页打开
+router.push(router.buildUrl("/lead/detail", { Id: id }), true);
 ```
 
 ### 2.4 更新页签标题与文件下载
