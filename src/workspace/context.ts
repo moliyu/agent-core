@@ -19,7 +19,7 @@ export interface OasisWorkspaceConfig {
 export const DEFAULT_CONFIG: Required<OasisWorkspaceConfig> = {
   port: 9222,
   urlMatch: "oasis",
-  editorUrl: "https://sitsprint18ide.tranzvision.com.cn/",
+  editorUrl: "",
   userDataDir: ".oasis-profile",
   componentsDir: "components",
   presetsDir: "presets",
@@ -35,31 +35,24 @@ export class WorkspaceContext {
   }
 
   /**
-   * 从当前工作目录或指定目录向上查找 oasis.config.json
+   * 从当前工作目录或指定目录加载 oasis.config.json（不再向上级目录递归，避免被父级残留配置劫持）
    */
   public static findAndLoad(startDir: string = process.cwd()): WorkspaceContext {
-    let current = path.resolve(startDir);
-    while (true) {
-      const configPath = path.join(current, "oasis.config.json");
-      if (fs.existsSync(configPath)) {
-        try {
-          const raw = fs.readFileSync(configPath, "utf-8");
-          const parsed = JSON.parse(raw);
-          return new WorkspaceContext(current, parsed);
-        } catch (e: any) {
-          console.warn(`[agent-core] 无法解析 ${configPath}，使用默认配置: ${e.message}`);
-          return new WorkspaceContext(current);
-        }
+    const current = path.resolve(startDir);
+    const configPath = path.join(current, "oasis.config.json");
+    if (fs.existsSync(configPath)) {
+      try {
+        const raw = fs.readFileSync(configPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        return new WorkspaceContext(current, parsed);
+      } catch (e: any) {
+        console.warn(`[agent-core] 无法解析 ${configPath}，使用默认配置: ${e.message}`);
+        return new WorkspaceContext(current);
       }
-      const parent = path.dirname(current);
-      if (parent === current) {
-        break;
-      }
-      current = parent;
     }
 
-    // 未找到，以 startDir 为默认工作区
-    return new WorkspaceContext(startDir);
+    // 未找到，以 startDir 为工作区
+    return new WorkspaceContext(current);
   }
 
   /**

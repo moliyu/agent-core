@@ -2,18 +2,20 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { OasisEditorBridge } from "../bridge/oasis-editor-bridge.js";
+import { PageBridge } from "../bridge/page-bridge.js";
 import { WorkspaceContext } from "../workspace/context.js";
 import { openBlankCanvas } from "../bridge/ide-actions.js";
-import { OasisBootstrapper } from "../bootstrap/bootstrapper.js";
 
 export interface ToolExecutionContext {
   workspace: WorkspaceContext;
+  pageBridge?: PageBridge;
 }
 
 export interface AgentToolDefinition {
   name: string;
   description: string;
   requiresEditor?: boolean;
+  requiresPageOnly?: boolean;
   parameters: z.ZodTypeAny;
   execute: (
     editor: OasisEditorBridge,
@@ -271,8 +273,9 @@ export const getUiComponentsTool: AgentToolDefinition = {
 
 export const getComponentDefTool: AgentToolDefinition = {
   name: "get_component_def",
+  requiresEditor: false,
   description:
-    "从工作区 components/ 读取指定组件的完整 TypeScript 契约规范代码（包括字段说明、严格枚举联合类型、默认值和预设模版）。比死板的 JSON 更精准，杜绝属性名与枚举幻觉。",
+    "从工作区 components/ 读取指定组件的完整 TypeScript 规范代码（包括字段说明、严格枚举联合类型、默认值和预设模版）。比死板的 JSON 更精准，杜绝属性名与枚举幻觉。",
   parameters: z.object({
     componentType: z
       .string()
@@ -293,41 +296,9 @@ export const getComponentDefTool: AgentToolDefinition = {
       };
     }
 
-    // 若本地尚未自举，尝试在线提取单个组件规范
-    try {
-      const rawMeta = await editor.getComponentMetadata(args.componentType);
-      const rawList = rawMeta?.components || [];
-      if (rawList.length > 0) {
-        return {
-          message:
-            "本地工作区尚未执行自举生成 TS 文件，以下为从在线页面提取的元数据。建议运行 bootstrap_assets 沉淀为 TS 资产。",
-          rawMetadata: rawList[0],
-        };
-      }
-    } catch {
-      // ignore
-    }
-
     throw new Error(
-      `未找到组件 [${args.componentType}] 的 TypeScript 规范文件 (${tsPath})。请先调用 bootstrap_assets 工具生成工作区资产。`
+      `工作区 components/ 中尚未维护组件 [${args.componentType}] 的 TypeScript 规范文件 (${tsPath})。`
     );
-  },
-};
-
-export const bootstrapAssetsTool: AgentToolDefinition = {
-  name: "bootstrap_assets",
-  description:
-    "从当前连接的 Oasis 编辑器在线自举提取全量组件库资产，自动生成包含属性定义、合法枚举与预设模版的 TypeScript 规范文件到当前工作目录。",
-  parameters: z.object({}),
-  execute: async (editor, _args, context) => {
-    const ws = context?.workspace || WorkspaceContext.findAndLoad();
-    const result = await OasisBootstrapper.bootstrap(editor, ws);
-    return {
-      success: true,
-      totalComponents: result.total,
-      outputDir: result.outputDir,
-      message: `成功自举提取并生成了 ${result.total} 个组件的 TypeScript 规范代码到 ${result.outputDir}！`,
-    };
   },
 };
 
@@ -367,12 +338,118 @@ export const openBlankCanvasTool: AgentToolDefinition = {
   },
 };
 
+export const inspectNetworkTool: AgentToolDefinition = {
+  name: "inspect_network",
+  description:
+    "查看当前浏览器页面通过 CDP 捕获到的 XHR/Fetch 接口请求（含 POST 请求、请求头、POST 参数与响应体）。支持列表检索 ('list')、查看单条请求完整详情 ('detail') 和清空缓存 ('clear')。",
+  requiresPageOnly: true,
+  parameters: z.object({
+    action: z
+      .enum(["list", "detail", "clear"])
+      .default("list")
+      .describe("操作模式：'list' 列出最近捕获的请求；'detail' 查看指定 requestId 完整请求与响应；'clear' 清空缓冲区"),
+    requestId: z
+      .string()
+      .optional()
+      .describe("当 action='detail' 时必须提供目标请求的 requestId"),
+    urlFilter: z
+      .string()
+      .optional()
+      .describe("仅在 action='list' 时生效，按 URL 关键字忽略大小写过滤"),
+    method: z
+      .string()
+      .optional()
+      .describe("仅在 action='list' 时生效，按 HTTP 方法过滤（如 GET, POST）"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .default(20)
+      .describe("仅在 action='list' 时生效，返回最新请求条数上限（默认 20，最大 100）"),
+  }),
+  execute: async (editor, args, context) => {
+    const pageBridge = context?.pageBridge || editor?.pageBridge;
+    if (!pageBridge) {
+      throw new Error("当前未连接到浏览器页面");
+    }
+
+    if (args.action === "clear") {
+      pageBridge.networkMonitor.clear();
+      return { cleared: true, message: "已清空网络请求监听缓冲区" };
+    }
+
+    if (args.action === "detail") {
+      if (!args.requestId) {
+        throw new Error("action='detail' 时必须提供 requestId");
+      }
+      return await pageBridge.networkMonitor.getEntryDetail(args.requestId);
+    }
+
+    const entries = pageBridge.networkMonitor.listEntries({
+      urlFilter: args.urlFilter,
+      method: args.method,
+      limit: args.limit,
+    });
+    return {
+      totalReturned: entries.length,
+      requests: entries,
+    };
+  },
+};
+
+export const pageFetchTool: AgentToolDefinition = {
+  name: "page_fetch",
+  description:
+    "在当前浏览器页面上下文中直接发起 HTTP 请求（支持 GET/POST/PUT/DELETE/PATCH），自动复用当前登录态 Cookie 与同源鉴权状态，用于主动查询业务元数据、字段定义或调试后端接口。",
+  requiresPageOnly: true,
+  parameters: z.object({
+    url: z.string().min(1).describe("请求路径或完整 URL（如 '/com/bm/be/query'）"),
+    method: z
+      .enum(["GET", "POST", "PUT", "DELETE", "PATCH"])
+      .default("GET")
+      .describe("HTTP 请求方法，默认 GET"),
+    headers: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe("附加请求头字典"),
+    body: z
+      .unknown()
+      .optional()
+      .describe("请求体（非 GET 请求时生效；传入对象会自动 JSON 序列化并设置 Content-Type: application/json）"),
+    timeoutMs: z
+      .number()
+      .int()
+      .min(1000)
+      .max(60000)
+      .optional()
+      .default(15000)
+      .describe("请求超时时间（毫秒），默认 15000"),
+  }),
+  execute: async (editor, args, context) => {
+    const pageBridge = context?.pageBridge || editor?.pageBridge;
+    if (!pageBridge) {
+      throw new Error("当前未连接到浏览器页面");
+    }
+
+    return await pageBridge.fetch({
+      url: args.url,
+      method: args.method,
+      headers: args.headers,
+      body: args.body,
+      timeoutMs: args.timeoutMs,
+    });
+  },
+};
+
 export const allOasisTools: AgentToolDefinition[] = [
   inspectUiTreeTool,
   editUiTreeTool,
   getUiComponentsTool,
   getComponentDefTool,
-  bootstrapAssetsTool,
   clickUiElementTool,
   openBlankCanvasTool,
+  inspectNetworkTool,
+  pageFetchTool,
 ];

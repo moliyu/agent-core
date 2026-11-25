@@ -1,4 +1,5 @@
 import { ICdpConnection } from "../cdp/cdp-client.js";
+import { NetworkMonitor } from "./network-monitor.js";
 
 export interface EvaluateOptions {
   timeoutMs?: number;
@@ -6,15 +7,40 @@ export interface EvaluateOptions {
   returnByValue?: boolean;
 }
 
+export interface PageFetchOptions {
+  url: string;
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  headers?: Record<string, string>;
+  body?: unknown;
+  timeoutMs?: number;
+}
+
+export interface PageFetchResult {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  url: string;
+  headers: Record<string, string>;
+  data: unknown;
+  truncated?: boolean;
+}
+
+const MAX_FETCH_TEXT_CHARS = 30000;
+
 export class PageBridge {
-  constructor(public readonly connection: ICdpConnection, public readonly targetUrl?: string) {}
+  public readonly networkMonitor: NetworkMonitor;
+
+  constructor(public readonly connection: ICdpConnection, public readonly targetUrl?: string) {
+    this.networkMonitor = new NetworkMonitor(connection);
+  }
 
   /**
-   * 启用必要的 CDP 域（Runtime, Page 等）
+   * 启用必要的 CDP 域（Runtime, Page, Network 等）
    */
   public async init(): Promise<void> {
     await this.connection.send("Runtime.enable");
     await this.connection.send("Page.enable");
+    await this.networkMonitor.start();
   }
 
   /**
@@ -126,5 +152,77 @@ export class PageBridge {
    */
   public async navigate(url: string): Promise<void> {
     await this.connection.send("Page.navigate", { url });
+  }
+
+  /**
+   * 在当前页面上下文中发起 HTTP 请求（支持 GET / POST 等，自动携带页面 Cookie 与同源鉴权状态）
+   */
+  public async fetch(options: PageFetchOptions): Promise<PageFetchResult> {
+    const method = (options.method || "GET").toUpperCase();
+    const timeoutMs = options.timeoutMs ?? 15000;
+    const headers: Record<string, string> = { ...(options.headers || {}) };
+
+    let serializedBody: string | undefined;
+    if (options.body !== undefined && options.body !== null && method !== "GET") {
+      if (typeof options.body === "string") {
+        serializedBody = options.body;
+      } else {
+        serializedBody = JSON.stringify(options.body);
+        const hasContentType = Object.keys(headers).some(
+          (k) => k.toLowerCase() === "content-type"
+        );
+        if (!hasContentType) {
+          headers["Content-Type"] = "application/json";
+        }
+      }
+    }
+
+    const expression = `
+      (async function() {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ${timeoutMs});
+        try {
+          const resp = await fetch(${JSON.stringify(options.url)}, {
+            method: ${JSON.stringify(method)},
+            headers: ${JSON.stringify(headers)},
+            ${serializedBody !== undefined ? `body: ${JSON.stringify(serializedBody)},` : ""}
+            credentials: "include",
+            signal: controller.signal
+          });
+          const respHeaders = {};
+          resp.headers.forEach((v, k) => { respHeaders[k] = v; });
+          const text = await resp.text();
+          const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+          let data = text;
+          let truncated = false;
+          if (contentType.includes("application/json")) {
+            try {
+              data = JSON.parse(text);
+            } catch {
+              if (text.length > ${MAX_FETCH_TEXT_CHARS}) {
+                data = text.slice(0, ${MAX_FETCH_TEXT_CHARS});
+                truncated = true;
+              }
+            }
+          } else if (text.length > ${MAX_FETCH_TEXT_CHARS}) {
+            data = text.slice(0, ${MAX_FETCH_TEXT_CHARS});
+            truncated = true;
+          }
+          return {
+            ok: resp.ok,
+            status: resp.status,
+            statusText: resp.statusText,
+            url: resp.url,
+            headers: respHeaders,
+            data,
+            ...(truncated ? { truncated: true } : {})
+          };
+        } finally {
+          clearTimeout(timer);
+        }
+      })()
+    `;
+
+    return this.evaluate<PageFetchResult>(expression, { timeoutMs: timeoutMs + 2000 });
   }
 }

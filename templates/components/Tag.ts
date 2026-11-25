@@ -1,4 +1,4 @@
-import type { MessageValue, ExpressionValue, StyleProps, ClickEvent } from "./types.js";
+import type { MessageValue, ExpressionValue, JSFunction, StyleProps, ClickEvent } from "./types.js";
 
 /**
  * Tag 标签状态组件
@@ -28,8 +28,8 @@ export interface TagProps {
   isBorder?: ExpressionValue<boolean>;
   /** 是否显示关闭小图标，默认: false */
   isCloseIcon?: ExpressionValue<boolean>;
-  /** 关闭图标点击回调代码（当 isCloseIcon 为 true 时生效） */
-  onClose?: ExpressionValue<string | false>;
+  /** 关闭图标点击回调（当 isCloseIcon 为 true 时生效；未配置时为 false） */
+  onClose?: JSFunction | false;
   /** CSS 可见性，默认: true */
   visible?: ExpressionValue<boolean>;
   /** 条件隐藏并卸载，默认: false */
@@ -87,6 +87,6 @@ export const tagPresets = {
     tagColor: "default",
     isBorder: true,
     isCloseIcon: true,
-    onClose: onCloseCode || false,
+    onClose: onCloseCode ? { _type: "JSFunction", value: onCloseCode } : false,
   }),
 };

@@ -8,9 +8,10 @@ describe("oasis-editor-tools tests", () => {
     expect(names).toContain("edit_ui_tree");
     expect(names).toContain("get_ui_components");
     expect(names).toContain("get_component_def");
-    expect(names).toContain("bootstrap_assets");
     expect(names).toContain("click_ui_element");
     expect(names).toContain("open_blank_canvas");
+    expect(names).toContain("inspect_network");
+    expect(names).toContain("page_fetch");
   });
 
   it("should validate tool arguments with zod", () => {
@@ -35,5 +36,13 @@ describe("oasis-editor-tools tests", () => {
     const getDefTool = allOasisTools.find((t) => t.name === "get_component_def")!;
     expect(getDefTool.parameters.safeParse({ componentType: "Button" }).success).toBe(true);
     expect(getDefTool.parameters.safeParse({}).success).toBe(false);
+
+    const networkTool = allOasisTools.find((t) => t.name === "inspect_network")!;
+    expect(networkTool.parameters.safeParse({ action: "list", method: "POST" }).success).toBe(true);
+    expect(networkTool.parameters.safeParse({ action: "detail", requestId: "req-1" }).success).toBe(true);
+
+    const fetchTool = allOasisTools.find((t) => t.name === "page_fetch")!;
+    expect(fetchTool.parameters.safeParse({ url: "/com/bm/be", method: "POST", body: { a: 1 } }).success).toBe(true);
+    expect(fetchTool.parameters.safeParse({ url: "" }).success).toBe(false);
   });
 });

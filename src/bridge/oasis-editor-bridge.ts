@@ -158,15 +158,6 @@ export class OasisEditorBridge {
   }
 
   /**
-   * 批量执行编辑操作
-   */
-  public async applyMutations(input: {
-    operations: any[];
-  }): Promise<{ nodes: Record<string, OasisBridgeNodeDetails> }> {
-    return this.invokeBridgeMethod("applyMutations", [input]);
-  }
-
-  /**
    * 触发画布内某节点的文字点击
    */
   public async clickNodeElementByText(input: {

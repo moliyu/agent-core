@@ -117,7 +117,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
       return editorBridge;
     } catch {
       throw new Error(
-        `Oasis 画布通信 Bridge 尚未就绪。当前浏览器可能停留在 IDE 外层页面（未进入画布）。请先调用 [open_blank_canvas] 工具自动新建空白页面，或手动在页面中点击【工程 -> 开始工作 -> 新建空白页面】。`
+        `Oasis 画布通信 Bridge 尚未就绪。若当前尚未打开或尚未登录 Oasis IDE，请先在已打开的 Chrome 窗口中访问对应 IDE 地址并完成登录；若已登录并停留在 IDE 外层页面，可调用 [open_blank_canvas] 自动新建空白页面，或手动进入画布后再重试。`
       );
     }
   }
@@ -158,6 +158,24 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
       if (tool.requiresEditor === false) {
         const validatedArgs = tool.parameters.parse(args ?? {});
         const result = await tool.execute(null as any, validatedArgs, { workspace });
+        return {
+          content: [
+            {
+              type: "text",
+              text: typeof result === "string" ? result : JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+
+      if (tool.requiresPageOnly) {
+        const pageBridge = await getOrInitPageBridge();
+        const validatedArgs = tool.parameters.parse(args ?? {});
+        const result = await tool.execute(
+          new OasisEditorBridge(pageBridge),
+          validatedArgs,
+          { workspace, pageBridge }
+        );
         return {
           content: [
             {

@@ -18,11 +18,15 @@ export async function openBlankCanvas(
   pageBridge: PageBridge,
   options: OpenBlankCanvasOptions = {}
 ): Promise<OpenBlankCanvasResult> {
-  // 0. 若当前页面仍停留在空白页 (about:blank)，自动导航到目标 Oasis IDE 页面
+  // 0. 若当前页面仍停留在空白页 (about:blank)，仅在配置了 editorUrl 时自动导航；否则提示用户打开并登录 IDE
   const currentHref = await pageBridge.evaluate<string>("location.href").catch(() => "about:blank");
   if (currentHref.startsWith("about:") || currentHref === "" || currentHref === "about:blank") {
-    const targetUrl = options.editorUrl || "https://sitsprint18ide.tranzvision.com.cn/";
-    await pageBridge.evaluate(`location.href = ${JSON.stringify(targetUrl)}`);
+    if (!options.editorUrl) {
+      throw new Error(
+        "当前浏览器停留在空白页，且 oasis.config.json 未配置 editorUrl。请先在已打开的 Chrome 窗口中访问对应的 Oasis IDE 地址并完成登录，或在 oasis.config.json 中配置 editorUrl 后重试。"
+      );
+    }
+    await pageBridge.evaluate(`location.href = ${JSON.stringify(options.editorUrl)}`);
     await new Promise((r) => setTimeout(r, 2500));
     await pageBridge.waitForFunction("Boolean(document.body)", { timeoutMs: 15000 });
   }

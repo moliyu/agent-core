@@ -2,13 +2,12 @@ import http from "node:http";
 import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
-import os from "node:os";
 import { findChromeExecutable } from "./chrome-finder.js";
 
 export interface ChromeLauncherOptions {
   port?: number;
   host?: string;
-  userDataDir?: string;
+  userDataDir: string;
   executablePath?: string;
   targetUrl?: string;
   headless?: boolean;
@@ -48,9 +47,12 @@ export class ChromeLauncher {
   /**
    * 拉起独立的 Chrome 实例
    */
-  public static launch(options: ChromeLauncherOptions = {}): { pid: number | undefined } {
+  public static launch(options: ChromeLauncherOptions): { pid: number | undefined } {
     const port = options.port ?? 9222;
-    const userDataDir = options.userDataDir || path.join(os.homedir(), ".oasis-agent-profile");
+    if (!options.userDataDir) {
+      throw new Error("必须显式指定 Chrome 的 userDataDir（例如来自 workspace.getUserDataDir()）");
+    }
+    const userDataDir = path.resolve(options.userDataDir);
 
     if (!fs.existsSync(userDataDir)) {
       fs.mkdirSync(userDataDir, { recursive: true });
@@ -97,7 +99,7 @@ export class ChromeLauncher {
    * 确保 Chrome 已经在运行并开启远程调试
    */
   public static async ensureRunning(
-    options: ChromeLauncherOptions = {},
+    options: ChromeLauncherOptions,
     waitTimeoutMs = 12000
   ): Promise<{ alreadyRunning: boolean; port: number }> {
     const port = options.port ?? 9222;

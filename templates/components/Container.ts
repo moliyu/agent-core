@@ -128,20 +128,25 @@ export const containerPresets = {
     gap,
   }),
 
-  /** 纵向内容列表/表单布局 (垂直排列，间距 16px) */
+  /** 纵向内容列表/表单布局 (垂直排列，子组件默认撑满 100% 宽度，间距 16px) */
   verticalStack: (gap: string = "16px"): ContainerProps => ({
     display: "flex",
     flexDirection: "column",
     flexJustifyContent: "flex-start",
-    flexAlignItems: "stretch",
+    flexAlignItems: "flex-start",
     width: "100%",
     gap,
+    style: {
+      alignItems: "stretch",
+    },
   }),
 
   /** 居中展示卡片外壳 (白色背景、圆角、阴影) */
   cardBox: (padding: string = "20px"): ContainerProps => ({
     display: "flex",
     flexDirection: "column",
+    flexJustifyContent: "flex-start",
+    flexAlignItems: "flex-start",
     width: "100%",
     backgroundColor: "#ffffff",
     style: {
@@ -149,6 +154,7 @@ export const containerPresets = {
       borderRadius: "8px",
       border: "1px solid #f0f0f0",
       boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+      alignItems: "stretch",
     },
   }),
 

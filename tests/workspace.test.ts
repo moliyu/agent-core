@@ -44,4 +44,19 @@ describe("Workspace & CLI Init", () => {
     expect(ws.getComponentsDir()).toBe(path.join(tmpDir, "components"));
     expect(ws.getUserDataDir()).toBe(path.join(tmpDir, ".oasis-profile"));
   });
+
+  it("should use startDir as workspace root and not walk up to parent oasis.config.json", () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "oasis.config.json"),
+      JSON.stringify({ port: 9999 }),
+      "utf-8"
+    );
+    const childDir = path.join(tmpDir, "nested-project");
+    fs.mkdirSync(childDir, { recursive: true });
+
+    const ws = WorkspaceContext.findAndLoad(childDir);
+    expect(ws.rootDir).toBe(childDir);
+    expect(ws.config.port).toBe(9222);
+    expect(ws.getUserDataDir()).toBe(path.join(childDir, ".oasis-profile"));
+  });
 });

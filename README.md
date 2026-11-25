@@ -10,10 +10,10 @@
 - **双模通信底座**：
   - 基于 CDP WebSocket 直连活跃页面，零额外中间件，毫秒级响应；
   - 深度桥接 Oasis 前端编辑器上下文 (`window.__OASIS_UI_EDITOR_BRIDGE__`)。
-- **原子组件资产化 (Code-as-Asset)**：
-  - 精选收敛 4 大基础原子组件规范：`Text`（文本）、`Tag`（状态胶囊）、`Button`（交互按钮）、`Container`（Flex 布局骨架）；
-  - 严谨的 TypeScript 接口类型契约与场景推荐预设；
-  - 配套排版知识库与排坑指南（规范 `flexRatio` 弹性缩放）。
+- **组件资产化 (Code-as-Asset)**：
+  - 内置 41 个高频核心组件 TypeScript 规范（涵盖布局容器、表单控件、数据表格 `GridPlus`、数据服务 `ServiceData`、循环容器 `IteratorContainer`、状态模型与树/穿梭框等）；
+  - 严谨的 TypeScript 接口类型定义、枚举联合类型与场景推荐预设；
+  - 配套排版选型指南 [COMPONENTS.md](templates/components/COMPONENTS.md) 与页面数据/接口联调规范 [DATA_AND_API.md](templates/components/DATA_AND_API.md)。
 - **IDE 自动化穿透 (Tool & Skill)**：
   - 内置 `open_blank_canvas` 工具与 `oasis-blank-canvas` Agent Skill；
   - 自动穿透【顶部菜单“工程” -> “开始工作” -> 确认丢弃旧空间 -> 操作面板“新建空白页面”】完整链路。
@@ -32,14 +32,13 @@
 agent-core/
 ├── src/
 │   ├── cdp/         # Chrome 路径探测、进程拉起、WebSocket CDP 客户端
-│   ├── bridge/      # OasisEditorBridge 画布封装与 IDE 宏动作 (openBlankCanvas)
+│   ├── bridge/      # OasisEditorBridge 画布封装、网络监控与 IDE 宏动作 (openBlankCanvas)
 │   ├── tools/       # 面向 Agent 的 Zod 校验标准工具集定义
 │   ├── workspace/   # 工作区配置发现与加载 (oasis.config.json)
 │   ├── mcp/         # Model Context Protocol (MCP) Stdio 服务端
-│   ├── cli/         # 脚手架 CLI 命令 (init, launch-chrome, bootstrap, mcp)
-│   └── bootstrap/   # 线上资产元数据自举与 TypeScript 代码生成引擎
+│   └── cli/         # 脚手架 CLI 命令 (init, launch-chrome, mcp)
 ├── templates/
-│   ├── components/  # 内置原子组件规范资产 (Text, Tag, Button, Container, COMPONENTS.md)
+│   ├── components/  # 内置 41 个核心组件规范资产、COMPONENTS.md 与 DATA_AND_API.md
 │   └── skills/      # 工程级专属 Agent Skills (.agents/skills/oasis-blank-canvas)
 └── tests/           # 单元测试与端到端集成测试集
 ```
@@ -49,17 +48,14 @@ agent-core/
 ## 常用命令
 
 ```bash
-# 1. 在当前或目标目录初始化 Oasis Agent 工程
-agent-core init [dir]
+# 1. 在当前工作目录初始化 Oasis Agent 工程
+agent-core init
 
 # 2. 启动 MCP 服务 (供 AI 客户端通过 stdio 接入)
 agent-core mcp
 
 # 3. 独立拉起调试浏览器 (可选，mcp 会自动按需拉起)
 agent-core launch-chrome
-
-# 4. 从当前已连接的 Oasis 画布全量自举提取组件库规范 (可选)
-agent-core bootstrap
 ```
 
 ---
@@ -90,7 +86,6 @@ agent-core bootstrap
 | `get_ui_components` | 列出当前画布环境注册的全部可用组件列表 |
 | `get_component_def` | 获取指定组件的 TypeScript 属性定义与规范说明 |
 | `click_ui_element` | 根据可见文本点击/高亮指定节点内的 DOM 元素 |
-| `bootstrap_assets` | 在线提取当前连接画布中的全量组件资产 |
 
 #### 2. 自治 GitHub Issues 任务与异常闭环工具
 | 工具名称 | 功能描述 |

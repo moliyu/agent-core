@@ -87,14 +87,14 @@ dist/
         fs.copyFileSync(srcPath, destPath);
       }
     }
-    log(`[agent-core] 注入基础原子组件规范 (Text, Tag, Button, Container): ${componentsDir}`);
+    log(`[agent-core] 注入内置组件规范 (共 41 个): ${componentsDir}`);
   }
 
   const readmePath = path.join(componentsDir, "README.md");
   if (!fs.existsSync(readmePath)) {
     const readmeContent = `# Oasis 组件规范资产 (Code-as-Asset)
 
-本目录内置了 Oasis 基础原子组件规范 (Text, Tag, Button, Container)，
+本目录内置了 Oasis 41 个高频核心组件规范 (Text, Tag, Button, Container, PageRoot, DetailsPageContainer, Form, FormItemContainer, GridPlus, Grid, Dialog, Drawer, Card, Tab, Dropdown, Collapse, Descriptions, StateModel, Step, Timeline, Transfer, Tree, TreeSelect, AutoComplete, Input, Transform, Select, DatetimePicker, CheckBox, Radio, Switch, Prompt, SingleUpload, FileUpload, Image, CodeEditor, ColorPicker, Icon, IteratorContainer, ServiceData, StepPlus)，
 每个组件包含严格的 TypeScript 类型接口定义、合法枚举联合类型及推荐配置预设。
 Agent 接入后可直接按此规范生成和修改页面 UI。
 `;
@@ -109,19 +109,53 @@ Agent 接入后可直接按此规范生成和修改页面 UI。
   const presetSamplePath = path.join(presetsDir, "page-templates.ts");
   if (!fs.existsSync(presetSamplePath)) {
     const presetSampleContent = `/**
- * Oasis 页面与复杂组件预设模板
+ * Oasis 页面与复杂组件预设模板（沉淀自真实项目页面结构）
  */
 
 export interface PageLayoutPreset {
   name: string;
   description: string;
-  structure: Record<string, any>;
+  structure: Record<string, unknown>;
 }
 
-export const standardFormPreset: PageLayoutPreset = {
-  name: "标准表单查询页",
-  description: "顶部查询卡片 + 中部操作栏 + 底部数据表格",
-  structure: {},
+export const listManagePagePreset: PageLayoutPreset = {
+  name: "企业级列表管理页",
+  description: "顶部筛选 Form + 操作栏 + GridPlus 数据表格 + 新增/编辑 Dialog",
+  structure: {
+    root: "PageRoot",
+    sections: [
+      "Container(筛选栏: Form + 搜索/重置 Button)",
+      "GridPlus(列表主体 + globalOperationConfig/rowOperationConfig)",
+      "Dialog(新增/编辑弹窗: Form -> FormItemContainer -> 字段控件)",
+    ],
+  },
+};
+
+export const detailTabPagePreset: PageLayoutPreset = {
+  name: "企业级多页签详情页",
+  description: "顶部标题/StateModel + ServiceData/Step 阶段条 + Tab(基本信息 Collapse+Form / 子表 GridPlus / 变更日志 Timeline) + 底部操作栏",
+  structure: {
+    root: "PageRoot",
+    header: [
+      "Container(标题 Text + StateModel/Button)",
+      "ServiceData -> Step(labelPlacement: vertical, isPercent: true)",
+    ],
+    body: "Tab -> [基本信息(Collapse -> Form + GridPlus), 关联列表(GridPlus + Dialog), 变更日志(Timeline)]",
+    footer: "Container(底部按钮组: Button 保存/返回)",
+  },
+};
+
+export const drawerDetailPagePreset: PageLayoutPreset = {
+  name: "列表 + 侧滑抽屉详情/代码预览页",
+  description: "GridPlus 列表 + Dialog(CRUD 表单) + Drawer(Tab + Descriptions/CodeEditor 侧滑预览)",
+  structure: {
+    root: "PageRoot",
+    sections: [
+      "GridPlus(列表主体 + 行内查看详情 Button)",
+      "Dialog(新增/编辑弹窗: Form -> FormItemContainer -> 字段控件)",
+      "Drawer(侧滑详情: Tab -> Descriptions / CodeEditor)",
+    ],
+  },
 };
 `;
     fs.writeFileSync(presetSamplePath, presetSampleContent, "utf-8");
@@ -148,7 +182,14 @@ export const standardFormPreset: PageLayoutPreset = {
 - \`Text\`: 文本节点，提供 pageTitle、sectionTitle、body、secondary 等预设。
 - \`Tag\`: 状态胶囊节点，提供 success、warning、error 等预设。
 - \`Button\`: 操作按钮节点，提供 primaryAction、secondaryAction、dangerDelete 等预设。
-详细设计规范与排版菜谱见 \`components/COMPONENTS.md\`。
+- \`Form\` / \`FormItemContainer\`: 表单容器与唯一字段区入口，支持 1~3 列等宽分栏与自定义 Container 灵活布局。
+- \`GridPlus\` / \`Grid\`: 企业级数据表格，支持 BE 元数据查询、分页、排序、筛选、行内编辑与 CRUD 操作。
+- \`Dialog\` / \`Drawer\`: 模态对话框与侧滑抽屉容器，分别支持 \`headTitle\`/\`footerContent\` 与 \`DrawerExtra\`/\`DrawerFooter\`。
+- \`PageRoot\`: 页面根节点（\`ROOT\`），承载 \`bmName\`、作用域 \`css\` 与默认 BE 上下文。
+- \`DetailsPageContainer\` / \`Card\` / \`Tab\` / \`Collapse\` / \`Dropdown\` / \`Descriptions\`: 详情页三段式框架、卡片、标签页、折叠面板、下拉菜单与描述列表。
+- \`Input\` / \`Transform\` / \`Select\` / \`AutoComplete\` / \`TreeSelect\` / \`DatetimePicker\` / \`CheckBox\` / \`Radio\` / \`Switch\` / \`Prompt\` / \`SingleUpload\` / \`FileUpload\` / \`CodeEditor\` / \`ColorPicker\`: 常用表单与专业输入控件。
+- \`Image\` / \`Icon\` / \`Transfer\` / \`Tree\` / \`IteratorContainer\` / \`ServiceData\` / \`Step\` / \`StepPlus\` / \`StateModel\` / \`Timeline\`: 图片、图标、穿梭框、树形控件、循环渲染容器、数据服务、阶段步骤条、状态模型与时间线。
+详细设计规范与排版菜谱见 \`components/COMPONENTS.md\`、接口与详情加载指南见 \`components/DATA_AND_API.md\`、页面模板见 \`presets/page-templates.ts\`。
 
 ## 行为准则
 当用户提出“配置低代码界面”、“查看页面”、“修改界面”等诉求时：
@@ -187,7 +228,7 @@ export const standardFormPreset: PageLayoutPreset = {
   log(`
 🎉 Oasis Agent 工作区初始化成功！
 工作目录: ${targetDir}
-已内置原子组件规范: components/ (Text, Tag, Button, Container)
+已内置组件规范: components/ (共 41 个: Text, Tag, Button, Container, PageRoot, DetailsPageContainer, Form, FormItemContainer, GridPlus, Grid, Dialog, Drawer, Card, Tab, Dropdown, Collapse, Descriptions, StateModel, Step, Timeline, Transfer, Tree, TreeSelect, AutoComplete, Input, Transform, Select, DatetimePicker, CheckBox, Radio, Switch, Prompt, SingleUpload, FileUpload, Image, CodeEditor, ColorPicker, Icon, IteratorContainer, ServiceData, StepPlus)
 
 接下来你只需：
 直接在 Cursor / Claude / Windsurf / Pi 中配置本 MCP 服务即可开始使用：

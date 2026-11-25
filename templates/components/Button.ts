@@ -13,6 +13,8 @@ import type { MessageValue, ExpressionValue, StyleProps, ClickEvent } from "./ty
  * - 点击事件写入 `events` 中（trigger 为 `"onClick"`，代码通过 300ms 防抖并异步等待执行）。
  */
 export interface ButtonProps {
+  /** 编辑器节点内部标识，保留原有值即可 */
+  id?: string;
   /** 按钮文案，默认: "Button" */
   label?: MessageValue<string>;
   /** 加载反馈形式，默认: "none" */
