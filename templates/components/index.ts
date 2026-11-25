@@ -1,5 +1,6 @@
 export * from "./types.js";
 export * from "./runtime-globals.js";
+export * from "./runtime-context.js";
 export * from "./Text.js";
 export * from "./Tag.js";
 export * from "./Button.js";

@@ -38,7 +38,7 @@ agent-core/
 │   ├── mcp/         # Model Context Protocol (MCP) Stdio 服务端
 │   └── cli/         # 脚手架 CLI 命令 (init, launch-chrome, mcp)
 ├── templates/
-│   ├── components/  # 内置 129 个组件规范资产、COMPONENTS.md、DATA_AND_API.md 与 RUNTIME_GLOBALS.md
+│   ├── components/  # 内置 129 个组件规范资产、COMPONENTS.md、DATA_AND_API.md、RUNTIME_GLOBALS.md 与 RUNTIME_CONTEXT.md
 │   └── skills/      # 工程级专属 Agent Skills (.agents/skills/oasis-blank-canvas)
 └── tests/           # 单元测试与端到端集成测试集
 ```
