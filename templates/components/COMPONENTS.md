@@ -104,6 +104,39 @@
 | **`ExportProgressDialog`** | 导出进度弹窗 | 轮询后台导出任务进度的弹窗 | **纯叶子节点**<br/>无子组件 | `alias`, `title`, `interval` |
 | **`BatchSaveButton`** | 批量保存按钮 | 带 `beforeToSubmit` 校验钩子的批量保存 | **纯叶子节点**<br/>无子组件 | `label`, `theme`, `variant`, `events` |
 | **`IssueFeedback`** | 问题反馈卡片 | 带优先级、描述和附件的问题反馈卡片 | **纯叶子节点**<br/>无子组件 | `priority`, `title`, `description`, `attachments` |
+| **`ApprovalFlowContent`** | 审批流内容区 | `ApprovalFlow` 承载表单或自定义内容的区域 | **内部槽位节点**<br/>位于 `ApprovalFlow` 内 | `visible`, `hidden`, `style` |
+| **`ApprovalFlowSlotContainer`** | 审批流槽位容器 | `ApprovalFlow` 中承载指定槽位或字段的容器 | **内部槽位节点**<br/>位于 `ApprovalFlow` 内 | `slotConfig`, `areaCode`, `fieldName` |
+| **`AssignmentBoardContainerTemplate`** | 分配看板容器模板 | `AssignmentBoard` 单个容器卡片模板 | **内部模板节点**<br/>位于 `container` 槽内 | `width`, `height`, `events` (`onContainerClick`) |
+| **`AssignmentBoardEmptyState`** | 分配看板空状态 | `AssignmentBoardItemList` 无关联项时的空状态 | **内部模板节点**<br/>位于 `ItemList` 内 | `width`, `height`, `visible`, `hidden` |
+| **`AssignmentBoardItemList`** | 分配看板项目列表 | 承载 `ItemTemplate` 与 `EmptyState` 的列表区 | **内部模板容器**<br/>最多含 2 个模板子节点 | `width`, `height`, `visible`, `hidden` |
+| **`AssignmentBoardItemTemplate`** | 分配看板项目模板 | `AssignmentBoardItemList` 单个关联项目模板 | **内部模板节点**<br/>位于 `ItemList` 内 | `width`, `height`, `events` (`onItemClick`) |
+| **`AutoCompleteOptionSlot`** | 自动补全选项槽 | `AutoComplete` 自定义选项模板 | **内部槽位节点**<br/>无持久化属性 | - |
+| **`DetailsPageContainerHead`** | 详情页头部区 | `DetailsPageContainer` 头部与导航区域 | **内部槽位节点**<br/>位于详情页容器内 | `visible`, `hidden`, `style` |
+| **`DetailsPageContainerContent`** | 详情页主体区 | `DetailsPageContainer` 主体内容区域 | **内部槽位节点**<br/>位于详情页容器内 | `visible`, `hidden`, `style` |
+| **`DetailsPageContainerFooter`** | 详情页底部区 | `DetailsPageContainer` 底部内容与操作区 | **内部槽位节点**<br/>位于详情页容器内 | `visible`, `hidden`, `style` |
+| **`DrawerExtra`** | 抽屉额外操作区 | `Drawer` 标题旁的额外内容区域 | **内部槽位节点**<br/>位于 `Drawer` 内 | `visible`, `hidden`, `style` |
+| **`DrawerFooter`** | 抽屉底部操作区 | `Drawer` 底部的操作内容区域 | **内部槽位节点**<br/>位于 `Drawer` 内 | `visible`, `hidden`, `style` |
+| **`DropdownItemSlot`** | 下拉选项模板槽 | `Dropdown` 单个选项的自定义模板区域 | **内部槽位节点**<br/>无持久化属性 | - |
+| **`DropdownTriggerSlot`** | 下拉触发器槽 | `Dropdown` 触发器的自定义内容区域 | **内部槽位节点**<br/>无持久化属性 | - |
+| **`EntityTooltipTemplate`** | 实体提示模板 | `SchedulingWorkbench` 实体 Tooltip 模板 | **内部模板节点**<br/>自动创建 `content` | `visible`, `hidden` |
+| **`EventTooltipTemplate`** | 日历事件提示模板 | `EventCalendar` 事件 Tooltip 模板 | **内部模板节点**<br/>自动创建 `content` | `visible`, `hidden` |
+| **`MiniMonthPanelTemplate`** | 迷你月历模板 | `EventCalendar` 迷你月历面板模板 | **内部模板节点**<br/>自动创建 `content` | `visible`, `hidden` |
+| **`LayoutRenderItem`** | 动态布局渲染项 | `DashboardDesign` 动态布局面板渲染项容器 | **内部模板节点**<br/>无持久化属性 | - |
+| **`LeftFillContainer`** | 左侧填充容器 | 填充布局左侧可用空间的容器 | **内部布局容器**<br/>用于分栏布局 | `visible`, `hidden`, `style` |
+| **`LeftSimpleContainer`** | 固定宽度左容器 | 具有固定宽度配置的简单左侧容器 | **内部布局容器**<br/>用于分栏布局 | `width`, `visible`, `hidden`, `style` |
+| **`RightSimpleContainer`** | 固定宽度右容器 | 具有固定宽度配置的简单右侧容器 | **内部布局容器**<br/>用于分栏布局 | `visible`, `hidden`, `style` |
+| **`PipelineContainer`** | 流程看板容器 | 流程看板的整体容器和布局区域 | **内部布局容器**<br/>位于看板内 | `heightType`, `height`, `events` |
+| **`PipelineItem`** | 流程阶段模板 | `PipelineV2` 生成的阶段模板节点 | **内部模板节点**<br/>含折叠头与任务模板 | `themeColor`, `collapsedTitle` |
+| **`PipelineIteratorItem`** | 流程迭代模板项 | `PipelineKanban` 阶段或任务的迭代模板实例 | **内部模板节点**<br/>无持久化属性 | - |
+| **`PipelineStageContainer`** | 流程阶段列容器 | 流程看板中单个阶段列的布局容器 | **内部布局容器**<br/>位于阶段模板内 | `widthType`, `width`, `heightType`, `height` |
+| **`PipelineStagesIteratorContainer`** | 流程阶段迭代容器 | 按阶段数据迭代渲染阶段模板的容器 | **内部迭代容器**<br/>位于 `PipelineKanban` 内 | `visible`, `hidden` |
+| **`PipelineTaskNode`** | 流程任务卡片容器 | `PipelineV2` 阶段任务模板中的 Canvas 容器 | **内部模板节点**<br/>位于 `PipelineItem` 内 | `backgroundColor`, `borderColor` |
+| **`PipelineTasksIteratorContainer`** | 流程任务迭代容器 | 按当前阶段任务数据迭代渲染任务模板 | **内部迭代容器**<br/>位于阶段模板内 | `iteratorVariableName`, `indexVariableName` |
+| **`RecursiveContainerSlot`** | 递归容器插槽 | `RecursiveContainerTemplate` 自定义内容槽 | **内部槽位节点**<br/>位于模板内 | `visible`, `hidden`, `style` |
+| **`RecursiveContainerTemplate`** | 递归容器模板 | `RecursiveContainer` 层级记录渲染模板 | **内部模板节点**<br/>可读取 `context.item` | `templateName`, `visible`, `hidden` |
+| **`TimelineItem`** | 时间线节点模板 | `Timeline` 时间线中单条记录的展示模板 | **内部模板节点**<br/>位于 `Timeline` 内 | `visible`, `hidden` |
+| **`WorkflowBuiltinNode`** | 工作流内置节点 | 定义可拖入 `WorkFlow` 的内置图标节点 | **内部定义节点**<br/>位于工作流面板内 | `panelLabel`, `type`, `iconName`, `rules` |
+| **`WorkflowReactNode`** | 工作流自定义节点 | 定义使用 Craft 模板渲染的自定义节点 | **内部定义节点**<br/>位于工作流面板内 | `panelLabel`, `width`, `height`, `rules` |
 
 ---
 

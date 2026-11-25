@@ -11,7 +11,7 @@
   - 基于 CDP WebSocket 直连活跃页面，零额外中间件，毫秒级响应；
   - 深度桥接 Oasis 前端编辑器上下文 (`window.__OASIS_UI_EDITOR_BRIDGE__`)。
 - **组件资产化 (Code-as-Asset)**：
-  - 内置 96 个核心组件 TypeScript 规范（涵盖布局容器、表单与条件控件、数据表格 `GridPlus`/`Table`、子表单 `SubForm`、数据服务 `ServiceData`、图表与关系图、审批/工作流/看板、日历排班与业务专有组件等）；
+  - 内置 129 个组件 TypeScript 规范（全量覆盖 `component-schemas-v2` 全部 128 个组件及旧版 `Grid`，涵盖布局容器、表单与条件控件、数据表格 `GridPlus`/`Table`、子表单 `SubForm`、数据服务 `ServiceData`、图表与关系图、审批/工作流/看板、日历排班、业务专有组件及内部槽位/模板节点）；
   - 严谨的 TypeScript 接口类型定义、枚举联合类型与场景推荐预设；
   - 配套排版选型指南 [COMPONENTS.md](templates/components/COMPONENTS.md) 与页面数据/接口联调规范 [DATA_AND_API.md](templates/components/DATA_AND_API.md)。
 - **IDE 自动化穿透 (Tool & Skill)**：
@@ -38,7 +38,7 @@ agent-core/
 │   ├── mcp/         # Model Context Protocol (MCP) Stdio 服务端
 │   └── cli/         # 脚手架 CLI 命令 (init, launch-chrome, mcp)
 ├── templates/
-│   ├── components/  # 内置 96 个核心组件规范资产、COMPONENTS.md 与 DATA_AND_API.md
+│   ├── components/  # 内置 129 个组件规范资产、COMPONENTS.md 与 DATA_AND_API.md
 │   └── skills/      # 工程级专属 Agent Skills (.agents/skills/oasis-blank-canvas)
 └── tests/           # 单元测试与端到端集成测试集
 ```
