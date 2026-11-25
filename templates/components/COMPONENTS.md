@@ -49,6 +49,61 @@
 | **`Tree`** | 树形控件 | 左树右表、组织架构树、多选/拖拽树 | **纯叶子节点**<br/>无子组件 | `alias`, `metaData.beName`, `treeFieldNames`, `treeConfig` |
 | **`TreeSelect`** | 树选择器 | 表单内单选/多选层级树节点 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `treeData`, `isMultiple`, `isOnlyLeafNode` |
 | **`AutoComplete`** | 自动完成 | 支持静态、自定义函数或 BE 异步检索的输入框 | **槽位/叶子控件**<br/>开启自定义模板时读写 `AutoCompleteOptionSlot` | `fieldName`, `dataSourceType`, `customFunction`, `beName` |
+| **`Pagination`** | 分页导航 | 配合 `IteratorContainer` 或自定义列表的受控/非受控分页 | **纯叶子节点**<br/>无子组件 | `mode`, `current`, `total`, `pageSize`, `events` |
+| **`Progress`** | 进度条 | 线性或环形完成度展示 | **纯叶子节点**<br/>无子组件 | `value`, `variant`, `color`, `showValueLabel` |
+| **`SliderInput`** | 滑块输入 | 表单内单值或区间数值滑块输入 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `range`, `min`, `max`, `step`, `quickInput` |
+| **`SegmentedBar`** | 分段比例条 | 多阶段/多分类占比可视化进度条 | **纯叶子节点**<br/>无子组件 | `items`, `mode`, `height`, `showTooltip` |
+| **`Carousel`** | 轮播图 | 横幅图片/内容轮播展示 | **纯叶子节点**<br/>无子组件 | `carouselItem`, `autoplay`, `arrows`, `dots` |
+| **`QrCode`** | 二维码 | 动态生成可下载二维码 | **纯叶子节点**<br/>无子组件 | `alias`, `value`, `size`, `status`, `errorLevel` |
+| **`Iframe`** | 内嵌网页 | 嵌入外部页面（带白名单、Sandbox 与工具栏） | **纯叶子节点**<br/>无子组件 | `src`, `height`, `allowedDomains`, `sandbox`, `showFullscreen` |
+| **`ButtonGroups`** | 按钮组 | 水平/垂直一组关联按钮（可绑定表单提交/重置） | **纯叶子节点**<br/>数组配置按钮项 | `buttonGroups`, `direction`, `size` |
+| **`Table`** | 基础表格 | 静态/轻量可编辑表格（BE 列表优先 `GridPlus`） | **纯叶子节点**<br/>无子组件 | `alias`, `dataSource`, `rowKey`, `tableHead`, `isSummary` |
+| **`SubForm`** | 子表单 | 表单内重复子记录集合（主从表从表录入） | **循环模板容器**<br/>运行时生成 `SubFormItem` | `alias`, `metaData.beName`, `title` |
+| **`SubFormItem`** | 子表单单项 | `SubForm` 单条记录的运行时模板区域 | **运行时模板节点**<br/>读取 `context.subFormItem` | 无持久化 props（传 `{}`） |
+| **`MultipleUpload`** | 多文件上传 | 兼容旧版/自动保存关联子表的多附件上传 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `mode`, `autoSave`, `fileBeName`, `maxCount` |
+| **`Tinymce`** | 富文本编辑 | 公告、邮件正文、富文本描述录入 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `minHeight`, `readOnly`, `events` |
+| **`IconSelector`** | 图标选择器 | 表单内选择 `antd.` / `pi.` / `svg.` 图标值 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `allowClear`, `defaultValue` |
+| **`VariableSelector`** | 变量选择器 | 从层级变量元数据树中单选/多选变量 | **纯叶子节点**<br/>放入 `FormItemContainer` 内 | `fieldName`, `dataMetas`, `isMultiple`, `isOnlyLeafNode` |
+| **`SearchParamsConstructor`** | 查询构造器 | 按钮弹窗或平铺式业务查询条件构造 | **纯叶子节点**<br/>无子组件 | `alias`, `displayMode`, `beName`, `filterName`, `condition` |
+| **`AndOrComponent`** | 与/或条件 | 客群/规则引擎的与/或条件树编辑器 | **纯叶子节点**<br/>无子组件 | `alias`, `mode`, `customFunction` |
+| **`BeConditionBuilder`** | 业务条件树 | BE 字段或自定义 `tableFields` 的可视化条件树 | **Canvas 容器**<br/>无固定静态子节点 | `alias`, `displayType`, `beName`, `tableFields`, `events` |
+| **`TreeView`** | 树形卡片视图 | 组织架构/股权穿透等可展开卡片树 | **模板容器**<br/>先读实时 `linkedNodes` 模板 | `alias`, `itemKey`, `data`, `hasChildren`, `events` |
+| **`DynamicComponent`** | 动态组件 | 按 `componentName` 动态加载远程组件子树 | **动态容器**<br/>先读实时树节点再改内容 | `componentName`, `visible`, `style` |
+| **`FusionPage`** | 融合页面 | 融合模型卡片与底部操作区的页面容器 | **槽位容器**<br/>先读实时子节点再改内容 | `visible`, `hidden` |
+| **`ChartPlus`** | 多维图表 | 柱状/折线/饼图等多维统计图表与工具栏 | **纯叶子节点**<br/>无子组件 | `supportExport`, `dimensions`, `statistics`, `chartRenders` |
+| **`ChartLinkage`** | 图表联动 | 多图表间的数据联动与准星样式配置 | **纯叶子节点**<br/>无子组件 | `height`, `dimensions`, `linkageConfig` |
+| **`LineChart`** | 折线图 | 类别/时间趋势折线与面积堆叠图 | **纯叶子节点**<br/>无子组件 | `data`, `stack`, `legendConfig`, `xAxisConfig`, `yAxisConfig` |
+| **`RadarChart`** | 雷达图 | 多维能力/指标对比雷达图 | **纯叶子节点**<br/>无子组件 | `indicators`, `series`, `radarShape`, `events` |
+| **`SankeyChart`** | 桑基图 | 节点之间带数值的流向关系图 | **纯叶子节点**<br/>无子组件 | `data`, `nodesConfig`, `linksConfig` |
+| **`RelationGraph`** | 关系图谱 | 企业/人物等实体关系网络图 | **模板容器**<br/>内部含 `RelationGraphItemComponent` | `data` (`nodes`, `edges`, `rootId`), `events` |
+| **`RelationGraphItemComponent`** | 关系节点模板 | `RelationGraph` 单个节点的展示模板 | **模板子节点**<br/>在 `RelationGraph` 内配置 | `itemColor`, `itemType`, `iconName`, `itemSize` |
+| **`GraphPath`** | 转化路径图 | 带时间/转化率轴的路径与流失分析图 | **纯叶子节点**<br/>无子组件 | `data`, `xType`, `yType`, `branchCollapsible`, `events` |
+| **`DashboardDesign`** | 仪表盘设计器 | 可拖拽网格布局与面板设计画布 | **动态容器**<br/>先读实时 `LayoutRenderItem` | `alias`, `mode`, `layouts`, `availableTemplates` |
+| **`ApprovalFlow`** | 审批流 | 审批流程状态、表单内容与审批操作 | **槽位容器**<br/>先读 `ApprovalFlowContent` | `alias`, `approvalFlowId`, `flowInstanceId`, `events` |
+| **`WorkFlow`** | 工作流画布 | LogicFlow 可交互流程图设计画布 | **Canvas 容器**<br/>内部可含 `WorkflowPanel` | `alias`, `readOnly`, `toolbarEnabled`, `events` |
+| **`WorkflowPanel`** | 工作流侧栏 | `WorkFlow` 侧边栏容器 | **Canvas 容器**<br/>放侧栏子节点 | `width`, `minHeight`, `style` |
+| **`PipelineV2`** | 商机看板 V2 | 可分页、虚拟滚动的阶段与商机看板 | **模板容器**<br/>先读实时阶段/任务模板 | `alias`, `stages`, `stageKey`, `taskKey`, `enableVirtualScroll` |
+| **`PipelineKanban`** | 拖拽阶段看板 | 支持跨阶段拖拽移动任务的看板 | **模板容器**<br/>先读实时阶段/任务模板 | `stages`, `direction`, `enableDrag`, `tasksFieldName` |
+| **`EventCalendar`** | 日程日历 | 月/周/日/列表及迷你月视图日程组件 | **条件模板容器**<br/>按视图读取 `linkedNodes` | `alias`, `displayMode`, `calendarEvents`, `draggable` |
+| **`AssignmentBoard`** | 资源分配看板 | 容器-项目一对一/一对多拖拽分配看板 | **模板容器**<br/>先读 `main-content` 等默认模板 | `alias`, `mode`, `containers`, `items`, `relations` |
+| **`SchedulingWorkbench`** | 排班工作台 | 资源时间轴排班与热力图占用工作台 | **条件模板容器**<br/>启用 Tooltip 时读 `linkedNodes` | `alias`, `mode`, `resources`, `entities`, `commitMode` |
+| **`BusinessConfigurator`** | 业务配置器 | 业务组件/表单设计器画布 | **纯叶子节点**<br/>无子组件 | `studioHeaderConfig`, `defaultCanvasJson`, `studioEvents` |
+| **`BusinessRenderer`** | 业务渲染器 | 渲染业务配置器产物（编辑/预览/只读） | **纯叶子节点**<br/>无子组件 | `viewMode`, `defaultCanvasJson`, `saveEnabled` |
+| **`CustomerJourneySearch`** | 客户旅程搜索 | 客户旅程条件检索与回调弹窗 | **纯叶子节点**<br/>无子组件 | `alias`, `searchItem`, `searchFunction`, `resetFunction` |
+| **`CustomerJourneyStage`** | 客户旅程阶段 | 客户旅程阶段列表与左右关联展示 | **纯叶子节点**<br/>无子组件 | `left`, `right`, `stages` |
+| **`ModelCanvasCard`** | 模型画布卡片 | 模型卡片的 `header` 与 `body` 模板 | **槽位容器**<br/>先读 `header`/`body` 真实 ID | `visible`, `hidden` |
+| **`ModelListItemCard`** | 模型列表卡片 | 模型列表项的 `header` 与 `body` 模板 | **槽位容器**<br/>先读 `header`/`body` 真实 ID | `header`, `visible`, `hidden` |
+| **`ModelResultFusion`** | 模型结果融合 | 多模型结果融合卡片与计算区 | **槽位容器**<br/>先读模型卡片与融合区 ID | `alias`, `itemKey`, `modelList`, `nodeList` |
+| **`InnerModelCard`** | 内部模型卡片 | 模型结果区中的内部卡片容器 | **Canvas 容器**<br/>放置模型内容 | `width`, `visible`, `hidden` |
+| **`SchemaBinding`** | Schema 绑定 | 目标 Schema 与源 ContextShape 映射编辑器 | **纯叶子节点**<br/>无子组件 | `alias`, `mode`, `schema`, `contextShape`, `defaultValue` |
+| **`SchemaDefinition`** | Schema 定义 | JSON Schema 可视化编辑器 | **纯叶子节点**<br/>无子组件 | `alias`, `defaultValue` |
+| **`StructureBuilder`** | 结构化行编辑 | 可展开树形/表格行数据编辑器 | **纯叶子节点**<br/>无子组件 | `alias`, `mode`, `rowKey`, `columns`, `action` |
+| **`RecursiveContainer`** | 递归容器 | 按层级数据与模板递归渲染嵌套内容 | **槽位容器**<br/>先读 `RecursiveContainerTemplate` | `alias`, `data`, `itemKey`, `childrenField`, `templates` |
+| **`StreamContentRender`** | 流式内容渲染 | AI/SSE 流式 Markdown 与代码块渲染 | **纯叶子节点**<br/>无子组件 | `alias`, `mode`, `copy`, `identifyCodeBlock`, `printEffect` |
+| **`LoginForm`** | 登录面板 | 封装宿主账密/验证码/SSO 的登录表单 | **纯叶子节点**<br/>认证由宿主管理 | `size`, `customHeight`, `customGap`, `style` |
+| **`ExportProgressDialog`** | 导出进度弹窗 | 轮询后台导出任务进度的弹窗 | **纯叶子节点**<br/>无子组件 | `alias`, `title`, `interval` |
+| **`BatchSaveButton`** | 批量保存按钮 | 带 `beforeToSubmit` 校验钩子的批量保存 | **纯叶子节点**<br/>无子组件 | `label`, `theme`, `variant`, `events` |
+| **`IssueFeedback`** | 问题反馈卡片 | 带优先级、描述和附件的问题反馈卡片 | **纯叶子节点**<br/>无子组件 | `priority`, `title`, `description`, `attachments` |
 
 ---
 

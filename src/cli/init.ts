@@ -87,14 +87,14 @@ dist/
         fs.copyFileSync(srcPath, destPath);
       }
     }
-    log(`[agent-core] 注入内置组件规范 (共 41 个): ${componentsDir}`);
+    log(`[agent-core] 注入内置组件规范 (共 96 个): ${componentsDir}`);
   }
 
   const readmePath = path.join(componentsDir, "README.md");
   if (!fs.existsSync(readmePath)) {
     const readmeContent = `# Oasis 组件规范资产 (Code-as-Asset)
 
-本目录内置了 Oasis 41 个高频核心组件规范 (Text, Tag, Button, Container, PageRoot, DetailsPageContainer, Form, FormItemContainer, GridPlus, Grid, Dialog, Drawer, Card, Tab, Dropdown, Collapse, Descriptions, StateModel, Step, Timeline, Transfer, Tree, TreeSelect, AutoComplete, Input, Transform, Select, DatetimePicker, CheckBox, Radio, Switch, Prompt, SingleUpload, FileUpload, Image, CodeEditor, ColorPicker, Icon, IteratorContainer, ServiceData, StepPlus)，
+本目录内置了 Oasis 96 个核心组件规范（涵盖基础排版、布局容器、表单与条件控件、子表单、数据表格、数据服务、图表与关系图、审批/工作流/看板、日历排班与业务专有组件等），
 每个组件包含严格的 TypeScript 类型接口定义、合法枚举联合类型及推荐配置预设。
 Agent 接入后可直接按此规范生成和修改页面 UI。
 `;
@@ -228,7 +228,7 @@ export const drawerDetailPagePreset: PageLayoutPreset = {
   log(`
 🎉 Oasis Agent 工作区初始化成功！
 工作目录: ${targetDir}
-已内置组件规范: components/ (共 41 个: Text, Tag, Button, Container, PageRoot, DetailsPageContainer, Form, FormItemContainer, GridPlus, Grid, Dialog, Drawer, Card, Tab, Dropdown, Collapse, Descriptions, StateModel, Step, Timeline, Transfer, Tree, TreeSelect, AutoComplete, Input, Transform, Select, DatetimePicker, CheckBox, Radio, Switch, Prompt, SingleUpload, FileUpload, Image, CodeEditor, ColorPicker, Icon, IteratorContainer, ServiceData, StepPlus)
+已内置组件规范: components/ (共 96 个，详见 components/COMPONENTS.md 与 components/DATA_AND_API.md)
 
 接下来你只需：
 直接在 Cursor / Claude / Windsurf / Pi 中配置本 MCP 服务即可开始使用：
