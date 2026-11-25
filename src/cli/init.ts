@@ -228,7 +228,7 @@ export const drawerDetailPagePreset: PageLayoutPreset = {
   log(`
 🎉 Oasis Agent 工作区初始化成功！
 工作目录: ${targetDir}
-已内置组件规范: components/ (共 129 个，详见 components/COMPONENTS.md 与 components/DATA_AND_API.md)
+已内置组件规范: components/ (共 129 个，详见 components/COMPONENTS.md、components/DATA_AND_API.md 与 components/RUNTIME_GLOBALS.md)
 
 接下来你只需：
 直接在 Cursor / Claude / Windsurf / Pi 中配置本 MCP 服务即可开始使用：
