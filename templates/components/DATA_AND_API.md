@@ -7,7 +7,7 @@
 ## 1. 如何调用接口（`ServiceData` + `request`）
 
 ### 1.1 通过 `ServiceData` 发布页面数据与方法
-推荐使用 `ServiceData`（`dataSourceType: "default"` + `customFunction`）包裹需要消费数据的区域，或设为 `visible: false` 作为页面级纯数据服务节点。在挂载时执行初始化函数，并通过 `context.updateContext((draft) => { ... })` 发布数据与刷新方法：
+推荐使用 `ServiceData`（`dataSourceType: "default"` + `customFunction`）**直接包裹**需要消费数据的区域或整页内容区（保持 `visible: true`，**严禁**设为 `visible: false` 空置，否则 IDE 设计态会渲染大块 `>隐藏状态<` 占位框影响画布排版）。在挂载时执行初始化函数，并通过 `context.updateContext((draft) => { ... })` 发布数据与刷新方法：
 
 ```ts
 // ServiceData.customFunction.value 实站标准写法（Immer draft 回调）
@@ -58,10 +58,9 @@
 >   - `user?.positions?.primaryPosition?.buId`：读取当前登录用户的默认组织/岗位信息。
 >   - `sendMessage("提示内容", "success" | "error" | "warning")`：全局轻提示。
 >   - `context[alias]`：直接调用同页其他组件暴露的方法（如 `context?.leadStage?.setPosition(currentIndex)`）。
-> - **三种典型落位**：
->   1. **包裹局部组件**：如 `ServiceData -> Step` 或 `ServiceData -> Timeline`，加载阶段/字典后直接驱动子组件；
->   2. **包裹整页/列表区**：初始化空数组与 `loadXxx`/`refreshXxx` 方法并立即加载，供 `IteratorContainer` 或按钮刷新；
->   3. **隐藏纯数据节点（`visible: false`）**：无 UI 子节点，仅在挂载时查询 `childBuids` 等上下文供同页 `GridPlus` 表达式使用。
+> - **两种典型落位（均保持 `visible: true` 包裹子组件）**：
+>   1. **包裹局部组件**：如 `ServiceData -> Step`、`ServiceData -> Timeline` 或 `ServiceData -> Table / GridPlus`，加载阶段/列表/字典后直接驱动子组件；
+>   2. **包裹整页/主内容区**：将 `ServiceData` 包裹整块业务内容（初始化空数组、`childBuids` 等共享上下文以及 `loadXxx`/`refreshXxx` 方法），供子树内所有 `GridPlus`、`IteratorContainer` 或按钮消费。
 
 ### 1.2 标准 BE 接口速查表
 

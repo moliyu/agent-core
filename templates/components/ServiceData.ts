@@ -23,7 +23,7 @@ export interface ServiceDataQueryParam {
  * @usageGuidelines
  * - `dataSourceType: "default"`：通过 `customFunction`（入参 `({ setData, element }) => void`）在挂载时执行逻辑，并通过 `context.updateContext((draft) => { ... })` 发布数据与刷新方法（或 `setData`）；
  * - 发起接口请求使用内置 `request({ url, method, params/data })`（`url` 省略 `/api` 前缀）；常用全局对象有 `router?.searchParams`、`user?.positions?.primaryPosition`、`sendMessage(msg, type)`；
- * - 若仅作为纯数据加载器（无 UI 子节点），可设为 `visible: false`；
+ * - **始终保持 `visible: true` 并包裹需要消费数据的组件/区域**（如 `ServiceData -> Table / GridPlus / Step / 整页内容区`）；**严禁**将 `ServiceData` 设为 `visible: false` 单独空置（IDE 设计态会渲染大块 `>隐藏状态<` 占位框并破坏画布排版）；
  * - `dataSourceType: "be"`：绑定 `beName`、`dataset`、`defaultQueryParams`、`resultField` 自动向后台查询数据。
  */
 export interface ServiceDataProps {

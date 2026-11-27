@@ -16,7 +16,6 @@ import { allOasisTools } from "../tools/oasis-editor-tools.js";
 import { allGitHubTools } from "../tools/github-issue-tools.js";
 import { WorkspaceContext } from "../workspace/context.js";
 import { ChromeLauncher } from "../cdp/chrome-launcher.js";
-import { runInit } from "../cli/init.js";
 
 export interface McpServerOptions {
   port?: number;
@@ -26,21 +25,12 @@ export interface McpServerOptions {
 
 export async function startMcpServer(options: McpServerOptions = {}): Promise<void> {
   let workspace = WorkspaceContext.findAndLoad();
-
-  // 若当前目录尚未初始化，自动静默创建工作区骨架 (oasis.config.json, tsconfig.json, components/ 等)
-  const configPath = path.join(workspace.rootDir, "oasis.config.json");
-  if (!fs.existsSync(configPath)) {
-    runInit({
-      targetDir: workspace.rootDir,
-      port: options.port,
-      urlMatch: options.urlMatch,
-      silent: true,
-    });
-    workspace = WorkspaceContext.findAndLoad(workspace.rootDir);
+  if (!workspace.isInitialized()) {
+    console.error(`[oasis-agent-core] ${workspace.getUninitializedErrorMessage()}`);
   }
 
-  const port = options.port ?? workspace.config.port;
-  const urlMatch = options.urlMatch ?? workspace.config.urlMatch;
+  const getPort = () => options.port ?? workspace.config.port;
+  const getUrlMatch = () => options.urlMatch ?? workspace.config.urlMatch;
 
   // 创建 MCP Server 实例
   const server = new Server(
@@ -58,12 +48,14 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
   let pageBridgeInstance: PageBridge | null = null;
   let editorBridge: OasisEditorBridge | null = null;
 
-  const lastTargetStatePath = path.join(os.tmpdir(), `oasis-agent-last-target-${port}.json`);
+  const getLastTargetStatePath = () =>
+    path.join(os.tmpdir(), `oasis-agent-last-target-${getPort()}.json`);
 
   function loadLastTargetId(): string | undefined {
     try {
-      if (!fs.existsSync(lastTargetStatePath)) return undefined;
-      const raw = JSON.parse(fs.readFileSync(lastTargetStatePath, "utf-8"));
+      const statePath = getLastTargetStatePath();
+      if (!fs.existsSync(statePath)) return undefined;
+      const raw = JSON.parse(fs.readFileSync(statePath, "utf-8"));
       return typeof raw?.targetId === "string" && raw.targetId ? raw.targetId : undefined;
     } catch {
       return undefined;
@@ -74,7 +66,7 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
     if (!targetId) return;
     try {
       fs.writeFileSync(
-        lastTargetStatePath,
+        getLastTargetStatePath(),
         JSON.stringify({ targetId, url: url || "", updatedAt: new Date().toISOString() }, null, 2),
         "utf-8"
       );
@@ -102,6 +94,9 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
         pageBridgeInstance = null;
       }
     }
+
+    const port = getPort();
+    const urlMatch = getUrlMatch();
 
     // 检查端口，若未监听且配置允许，自动拉起独立免弹窗 Chrome
     if (options.autoLaunchBrowser !== false) {
@@ -211,6 +206,17 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
       };
     }
 
+    const isOasisTool = allOasisTools.some((t) => t.name === name);
+    if (isOasisTool) {
+      if (!workspace.isInitialized()) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: workspace.getUninitializedErrorMessage() }],
+        };
+      }
+      workspace = WorkspaceContext.findAndLoad(workspace.rootDir);
+    }
+
     try {
       // 2.1 针对无需编辑器的工具（如 GitHub Issues 系列），无需拉起 Chrome 或连接 CDP
       if (tool.requiresEditor === false) {
@@ -284,5 +290,5 @@ export async function startMcpServer(options: McpServerOptions = {}): Promise<vo
   // 3. 启动标准 stdio 传输通道
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(`[oasis-agent-core] MCP Server started on stdio, target CDP port: ${port}`);
+  console.error(`[oasis-agent-core] MCP Server started on stdio, target CDP port: ${getPort()}`);
 }

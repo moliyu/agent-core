@@ -31,7 +31,6 @@ export function runInit(options: InitOptions = {}): { targetDir: string } {
     const configData = {
       port: options.port ?? DEFAULT_CONFIG.port,
       urlMatch: options.urlMatch ?? DEFAULT_CONFIG.urlMatch,
-      userDataDir: DEFAULT_CONFIG.userDataDir,
       componentsDir: DEFAULT_CONFIG.componentsDir,
       presetsDir: DEFAULT_CONFIG.presetsDir,
     };
@@ -61,8 +60,7 @@ export function runInit(options: InitOptions = {}): { targetDir: string } {
   // 3. 生成 .gitignore
   const gitignorePath = path.join(targetDir, ".gitignore");
   if (!fs.existsSync(gitignorePath)) {
-    const gitignoreContent = `.oasis-profile/
-node_modules/
+    const gitignoreContent = `node_modules/
 dist/
 *.log
 `;

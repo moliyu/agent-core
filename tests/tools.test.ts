@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { allOasisTools } from "../src/tools/oasis-editor-tools.js";
+import { allOasisTools, sanitizeEditorProps } from "../src/tools/oasis-editor-tools.js";
 
 describe("oasis-editor-tools tests", () => {
   it("should define all standard oasis tools with zod schemas", () => {
     const names = allOasisTools.map((t) => t.name);
+    expect(names).toContain("launch_browser");
     expect(names).toContain("inspect_ui_tree");
     expect(names).toContain("edit_ui_tree");
     expect(names).toContain("get_ui_components");
@@ -44,5 +45,39 @@ describe("oasis-editor-tools tests", () => {
     const fetchTool = allOasisTools.find((t) => t.name === "page_fetch")!;
     expect(fetchTool.parameters.safeParse({ url: "/com/bm/be", method: "POST", body: { a: 1 } }).success).toBe(true);
     expect(fetchTool.parameters.safeParse({ url: "" }).success).toBe(false);
+
+    const launchTool = allOasisTools.find((t) => t.name === "launch_browser")!;
+    expect(launchTool.requiresEditor).toBe(false);
+    expect(launchTool.parameters.safeParse({}).success).toBe(true);
+    expect(launchTool.parameters.safeParse({ url: "https://example.com" }).success).toBe(true);
+  });
+
+  it("should sanitize null props on add and update", () => {
+    expect(
+      sanitizeEditorProps("add", {
+        type: "number",
+        displayName: "年龄",
+        defaultValue: null,
+        placeholder: null,
+        min: null,
+      })
+    ).toEqual({
+      type: "number",
+      displayName: "年龄",
+    });
+
+    expect(
+      sanitizeEditorProps("update", {
+        defaultValue: null,
+        placeholder: null,
+        min: null,
+        labelWidth: null,
+        displayName: "年龄",
+      })
+    ).toEqual({
+      defaultValue: "",
+      placeholder: "",
+      displayName: "年龄",
+    });
   });
 });

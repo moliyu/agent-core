@@ -1,5 +1,8 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+
+export const FIXED_USER_DATA_DIR_NAME = ".oasis-agent-profile";
 
 export interface OasisWorkspaceConfig {
   /** Chrome 远程调试端口，默认 9222 */
@@ -8,8 +11,6 @@ export interface OasisWorkspaceConfig {
   urlMatch?: string;
   /** 编辑器默认打开的 URL 地址，如 'https://sitsprint18ide.tranzvision.com.cn/' */
   editorUrl?: string;
-  /** 独立 Chrome 实例的 User Data 目录（相对于工作区根目录），默认 '.oasis-profile' */
-  userDataDir?: string;
   /** 自举生成的组件 TypeScript 规范存放目录，默认 'components' */
   componentsDir?: string;
   /** 业务预设配置存放目录，默认 'presets' */
@@ -20,7 +21,6 @@ export const DEFAULT_CONFIG: Required<OasisWorkspaceConfig> = {
   port: 9222,
   urlMatch: "oasis",
   editorUrl: "",
-  userDataDir: ".oasis-profile",
   componentsDir: "components",
   presetsDir: "presets",
 };
@@ -56,11 +56,25 @@ export class WorkspaceContext {
   }
 
   /**
+   * 判断当前目录是否已初始化为 Oasis 工作区（存在 oasis.config.json）
+   */
+  public isInitialized(): boolean {
+    return fs.existsSync(path.join(this.rootDir, "oasis.config.json"));
+  }
+
+  /**
+   * 返回非工作区时的统一提示信息
+   */
+  public getUninitializedErrorMessage(): string {
+    return `当前目录 (${this.rootDir}) 尚未初始化为 Oasis 工作区（未找到 oasis.config.json）。请先在该目录下运行 \`agent-core init\` 初始化。`;
+  }
+
+  /**
    * 获取组件代码资产目录绝对路径
    */
   public getComponentsDir(): string {
     const dir = path.resolve(this.rootDir, this.config.componentsDir);
-    if (!fs.existsSync(dir)) {
+    if (this.isInitialized() && !fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     return dir;
@@ -71,17 +85,17 @@ export class WorkspaceContext {
    */
   public getPresetsDir(): string {
     const dir = path.resolve(this.rootDir, this.config.presetsDir);
-    if (!fs.existsSync(dir)) {
+    if (this.isInitialized() && !fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     return dir;
   }
 
   /**
-   * 获取独立 Chrome Profile 的绝对路径
+   * 获取独立 Chrome Profile 的绝对路径（固定为家目录下的 ~/.oasis-agent-profile，不开放配置）
    */
   public getUserDataDir(): string {
-    const dir = path.resolve(this.rootDir, this.config.userDataDir);
+    const dir = path.join(os.homedir(), FIXED_USER_DATA_DIR_NAME);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }

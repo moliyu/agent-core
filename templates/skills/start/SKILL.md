@@ -28,19 +28,20 @@ description: >-
 3. 读取 `oasis.config.json` 中的 `port`（默认 `9222`）、`urlMatch`（默认 `"oasis"`）与 `editorUrl`（如有）。
 
 ### 2. 探测或打开调试 Chrome 浏览器
-1. 先检查调试端口是否已在运行：
-   ```bash
-   curl -s --max-time 2 http://127.0.0.1:9222/json/list
-   ```
-   （若 `oasis.config.json` 配置了其他 `port`，替换为对应端口。）
-2. **若端口未响应**，拉起独立调试 Chrome：
-   ```bash
-   agent-core launch-chrome
-   ```
-   （若未全局安装 `agent-core`，改用 `npx @moliyu/agent-core launch-chrome` 或当前仓库的 `node dist/cli.js launch-chrome`。）
-   - 若 `oasis.config.json` 配有 `editorUrl` 且刚启动的浏览器停在空白页，可在启动后提示用户在浏览器中访问该地址，或通过 CDP/浏览器打开。
-3. **若端口已在运行**：
-   - 检查返回的标签页列表中是否已有 Oasis IDE 页面；
+1. **首选方式（已挂载 `oasis-editor` MCP 时）**：
+   - 直接调用 MCP 工具 `launch_browser()`（会自动探测调试端口并在未启动时由 MCP 宿主进程拉起独立调试 Chrome，同时返回当前 `tabs` 列表）。
+   - 如果 `oasis.config.json` 配有 `editorUrl`，可传入 `launch_browser({ url: editorUrl })`。
+2. **备选方式（MCP 尚未加载 `launch_browser` 或仅使用 CLI 时）**：
+   - 先检查调试端口是否已在运行：
+     ```bash
+     curl -s --max-time 2 http://127.0.0.1:9222/json/list
+     ```
+     （若 `oasis.config.json` 配置了其他 `port`，替换为对应端口。）
+   - 若端口未响应：
+     - 若当前终端支持申请宿主机/提权执行，请在**非沙箱权限**下运行 `agent-core launch-chrome`；
+     - **严禁**在受限沙箱内直接执行 `agent-core launch-chrome`、`open -na "Google Chrome"` 或 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`（macOS 沙箱会拦截 Crashpad 写入导致 Chrome 崩溃并弹出“意外退出”窗口）。若无法提权，直接提示用户在**本机终端**运行一次 `agent-core launch-chrome`。
+3. **检查已打开的标签页**：
+   - 核对返回标签页中是否已有 Oasis IDE 页面；
    - 注意区分 IDE 编辑页与 `/preview` 预览页，不要将 `/preview` 当成编辑画布。
 
 ### 3. 检查画布 Bridge 就绪状态

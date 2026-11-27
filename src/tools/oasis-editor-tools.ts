@@ -5,6 +5,7 @@ import { OasisEditorBridge } from "../bridge/oasis-editor-bridge.js";
 import { PageBridge } from "../bridge/page-bridge.js";
 import { WorkspaceContext } from "../workspace/context.js";
 import { openBlankCanvas } from "../bridge/ide-actions.js";
+import { ChromeLauncher } from "../cdp/chrome-launcher.js";
 
 export interface ToolExecutionContext {
   workspace: WorkspaceContext;
@@ -162,6 +163,44 @@ export const inspectUiTreeTool: AgentToolDefinition = {
   },
 };
 
+const NON_NULL_STRING_PROPS = new Set(["defaultValue", "placeholder", "tip"]);
+const NON_NULL_SCALAR_PROPS = new Set([
+  "labelWidth",
+  "min",
+  "max",
+  "step",
+  "precision",
+  "maxLength",
+]);
+
+/**
+ * 过滤或规范化编辑器组件 props 中的 `null` 值，防止触发 IDE 属性面板“该值不能为 null”校验报错。
+ */
+export function sanitizeEditorProps(
+  action: "add" | "update",
+  props?: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  if (!props) return props;
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (value === null) {
+      if (action === "add") {
+        // add 阶段直接省略 null 字段，使用组件默认值
+        continue;
+      }
+      if (NON_NULL_STRING_PROPS.has(key)) {
+        cleaned[key] = "";
+        continue;
+      }
+      if (NON_NULL_SCALAR_PROPS.has(key)) {
+        continue;
+      }
+    }
+    cleaned[key] = value;
+  }
+  return cleaned;
+}
+
 export const editUiTreeTool: AgentToolDefinition = {
   name: "edit_ui_tree",
   description:
@@ -204,13 +243,16 @@ export const editUiTreeTool: AgentToolDefinition = {
           componentType: args.componentType,
           parentId: args.parentId,
           index: args.index,
-          props: args.props,
+          props: sanitizeEditorProps("add", args.props),
         });
       }
       case "update": {
         if (!args.nodeId) throw new Error("更新组件属性必须提供 nodeId");
         if (!args.props) throw new Error("更新组件属性必须提供 props");
-        return await editor.setNodeProps(args.nodeId, args.props);
+        return await editor.setNodeProps(
+          args.nodeId,
+          sanitizeEditorProps("update", args.props) ?? {}
+        );
       }
       case "move": {
         if (!args.nodeId || !args.parentId) {
@@ -283,6 +325,9 @@ export const getComponentDefTool: AgentToolDefinition = {
   }),
   execute: async (editor, args, context) => {
     const ws = context?.workspace || WorkspaceContext.findAndLoad();
+    if (!ws.isInitialized()) {
+      throw new Error(ws.getUninitializedErrorMessage());
+    }
     const compDir = ws.getComponentsDir();
     const safeName = args.componentType.replace(/[^a-zA-Z0-9_$]/g, "_");
     const tsPath = path.join(compDir, `${safeName}.ts`);
@@ -443,7 +488,65 @@ export const pageFetchTool: AgentToolDefinition = {
   },
 };
 
+export const launchBrowserTool: AgentToolDefinition = {
+  name: "launch_browser",
+  description:
+    "探测或拉起当前工作区对应的独立调试 Chrome 浏览器（绕过终端沙箱限制），并返回当前已打开的标签页列表。",
+  requiresEditor: false,
+  parameters: z.object({
+    url: z
+      .string()
+      .optional()
+      .describe("可选：初始打开的 URL（默认使用工作区 oasis.config.json 的 editorUrl 或 about:blank）"),
+  }),
+  execute: async (_editor, args, context) => {
+    const workspace = context?.workspace ?? WorkspaceContext.findAndLoad();
+    const port = workspace.config.port ?? 9222;
+    const userDataDir = workspace.getUserDataDir();
+    const targetUrl = args?.url || workspace.config.editorUrl || "about:blank";
+
+    const status = await ChromeLauncher.ensureRunning({
+      port,
+      userDataDir,
+      targetUrl,
+    });
+
+    let tabs: Array<{ id?: string; title?: string; url?: string; isPreview?: boolean }> = [];
+    try {
+      const resp = await fetch(`http://127.0.0.1:${port}/json/list`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (resp.ok) {
+        const raw = (await resp.json()) as Array<{
+          id?: string;
+          type?: string;
+          title?: string;
+          url?: string;
+        }>;
+        tabs = raw
+          .filter((t) => t.type === "page")
+          .map((t) => ({
+            id: t.id,
+            title: t.title,
+            url: t.url,
+            isPreview: Boolean(t.url && t.url.includes("/preview")),
+          }));
+      }
+    } catch {
+      // ignore tab listing errors
+    }
+
+    return {
+      status: status.alreadyRunning ? "already_running" : "launched",
+      port,
+      userDataDir,
+      tabs,
+    };
+  },
+};
+
 export const allOasisTools: AgentToolDefinition[] = [
+  launchBrowserTool,
   inspectUiTreeTool,
   editUiTreeTool,
   getUiComponentsTool,

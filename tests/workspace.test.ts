@@ -38,11 +38,24 @@ describe("Workspace & CLI Init", () => {
     const config = JSON.parse(fs.readFileSync(path.join(tmpDir, "oasis.config.json"), "utf-8"));
     expect(config.port).toBe(9333);
     expect(config.urlMatch).toBe("custom-match");
+    expect(config.userDataDir).toBeUndefined();
 
     const ws = WorkspaceContext.findAndLoad(tmpDir);
+    expect(ws.isInitialized()).toBe(true);
     expect(ws.config.port).toBe(9333);
     expect(ws.getComponentsDir()).toBe(path.join(tmpDir, "components"));
-    expect(ws.getUserDataDir()).toBe(path.join(tmpDir, ".oasis-profile"));
+    expect(ws.getUserDataDir()).toBe(path.join(os.homedir(), ".oasis-agent-profile"));
+  });
+
+  it("should detect uninitialized workspace, avoid creating dirs, and provide init prompt", () => {
+    const ws = WorkspaceContext.findAndLoad(tmpDir);
+    expect(ws.isInitialized()).toBe(false);
+    expect(ws.getUninitializedErrorMessage()).toContain("agent-core init");
+
+    const compDir = ws.getComponentsDir();
+    const presetsDir = ws.getPresetsDir();
+    expect(fs.existsSync(compDir)).toBe(false);
+    expect(fs.existsSync(presetsDir)).toBe(false);
   });
 
   it("should use startDir as workspace root and not walk up to parent oasis.config.json", () => {
@@ -57,6 +70,16 @@ describe("Workspace & CLI Init", () => {
     const ws = WorkspaceContext.findAndLoad(childDir);
     expect(ws.rootDir).toBe(childDir);
     expect(ws.config.port).toBe(9222);
-    expect(ws.getUserDataDir()).toBe(path.join(childDir, ".oasis-profile"));
+    expect(ws.getUserDataDir()).toBe(path.join(os.homedir(), ".oasis-agent-profile"));
+  });
+
+  it("should always fix userDataDir to ~/.oasis-agent-profile even if config specifies one", () => {
+    fs.writeFileSync(
+      path.join(tmpDir, "oasis.config.json"),
+      JSON.stringify({ userDataDir: "/tmp/custom-ignored-profile" }),
+      "utf-8"
+    );
+    const ws = WorkspaceContext.findAndLoad(tmpDir);
+    expect(ws.getUserDataDir()).toBe(path.join(os.homedir(), ".oasis-agent-profile"));
   });
 });
